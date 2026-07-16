@@ -257,6 +257,19 @@ domain_knowledge_agent                  MooncakeAgentSkills
 
 每个 `SKILL.md` 末尾均有：**任何实质性更新（新增优化维度、修改分析流程、更新路由规则等），必须同步更新本 README.md** — 确保文档始终反映最新能力边界。
 
-## License
+---
 
-Copyright (c) 2026 LujhCoconut
+## ⚠️ 重要：自定义与微调
+
+这个仓库已包含我个人的知识和配置信息（SKILL.md 中的优化维度、KNOWLEDGE.md 中的累积经验、proposals/ 中的历史方案、history/ 中的操作日志）。
+
+如果你要基于此建立自己的 skill：
+
+- **保留所有目录下的 `SKILL.md`** — 它们是子命令的结构骨架（路由规则、领域知识映射、审查流程、子命令分发逻辑）
+- **保留 `mooncake/architecture.md`** — 三视角统一模型是优化分析的理论根基，适用于任何 LLM 推理服务平台
+- **自由微调 `SKILL.md` 内容** — 添加你的优化维度、修改审查维度、调整置信度阈值、增补 Q&A
+- **可以清空 `proposals/`** — 那是我的历史方案，不妨碍功能
+- **可以清空 `history/`** — 那是我的操作日志
+- **建议保留 `qa/KNOWLEDGE.md`** — 49 个配置参数 + 4 棵诊断树是通用的 Mooncake 知识，与你无关的个人偏好极少
+- **必须修改 `config.md`** — 将仓库地址改为你自己的 fork，否则 git push 会推到我的仓库
+- **`common/SKILL.md` 建议保留** — 35+ 通用优化模式和 6 维评估框架是跨项目通用的方法论
