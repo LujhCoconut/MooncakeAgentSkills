@@ -1,21 +1,19 @@
 # MooncakeAgentSkills
 
-> 🧠 基于领域知识的代码优化分析 skill — 从 103+ 篇论文洞察中寻找落地机会
+> 🧠 从 Paper work 到快速落地工业级代码
 
 [![Skill](https://img.shields.io/badge/Claude%20Code-Skill-blue)](https://claude.ai/code)
 [![Target](https://img.shields.io/badge/Target-Mooncake-orange)](https://github.com/kvcache-ai/Mooncake)
 [![License](https://img.shields.io/badge/License-LujhCoconut-green)](./LICENSE)
 
-MooncakeAgentSkills 是一个 **Claude Code Skill**，提供 `/advanced-optimize` 命令。它与 [domain_knowledge_agent](https://github.com/LujhCoconut/domain_knowledge_agent) 联动，自动扫描代码仓库、检索论文洞察、评估可应用性并生成结构化优化方案。
-
-首个对接目标是 **[Mooncake](https://github.com/kvcache-ai/Mooncake)** — 由 Moonshot AI 开源的 LLM 推理服务平台（FAST 2025 Best Paper），采用 KVCache 中心化的 Prefill-Decode 分离架构。
+MooncakeAgentSkills 是一个 **Claude Code Skill**，提供 `/advanced-optimize` 命令。它与 [domain_knowledge_agent](https://github.com/LujhCoconut/domain_knowledge_agent) 联动，自动扫描 **[Mooncake](https://github.com/kvcache-ai/Mooncake)**（Moonshot AI 开源的 KVCache 中心化 LLM 推理服务平台，FAST 2025 Best Paper）的源代码，检索论文洞察，评估可应用性，生成结构化优化方案。
 
 ---
 
 ## 工作原理
 
 ```
-/advanced-optimize Mooncake "降低 RDMA 传输延迟"
+/advanced-optimize "降低 RDMA 传输延迟"
     │
     ▼
 ┌──────────────────────────────────────────────────────────────┐
@@ -57,35 +55,35 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ### 传输引擎优化
 ```bash
-/advanced-optimize Mooncake "降低 RDMA 传输延迟"
-/advanced-optimize Mooncake "TENT 多路径切片调度如何自适应链路质量"
-/advanced-optimize Mooncake "GPU-NIC 拓扑发现是否可用于调度优化"
+/advanced-optimize "降低 RDMA 传输延迟"
+/advanced-optimize "TENT 多路径切片调度如何自适应链路质量"
+/advanced-optimize "GPU-NIC 拓扑发现是否可用于调度优化"
 ```
 
 ### 分布式存储优化
 ```bash
-/advanced-optimize Mooncake "改进 KV cache 驱逐策略，引入访问频率感知"
-/advanced-optimize Mooncake "Master 元数据服务如何实现高可用"
-/advanced-optimize Mooncake "G1→G2→G3 三级存储的迁移策略优化"
+/advanced-optimize "改进 KV cache 驱逐策略，引入访问频率感知"
+/advanced-optimize "Master 元数据服务如何实现高可用"
+/advanced-optimize "G1→G2→G3 三级存储的迁移策略优化"
 ```
 
 ### 缓存路由优化
 ```bash
-/advanced-optimize Mooncake "Conductor 前缀缓存索引结构优化"
-/advanced-optimize Mooncake "XXH3-64 哈希在亿级 key 下的碰撞风险"
+/advanced-optimize "Conductor 前缀缓存索引结构优化"
+/advanced-optimize "XXH3-64 哈希在亿级 key 下的碰撞风险"
 ```
 
-### 框架集成优化
+### Python 绑定 & 集成
 ```bash
-/advanced-optimize Mooncake "vLLM Connector 的 Python 绑定零拷贝路径"
-/advanced-optimize Mooncake "SGLang HiCache L3 后端延迟优化"
+/advanced-optimize "pybind11 Python 绑定零拷贝路径验证"
+/advanced-optimize "mooncake-integration 异步 store 的传输与推理 overlap"
 ```
 
 ### 构建 & 运维
 ```bash
-/advanced-optimize Mooncake "CMake 构建并行化与增量编译"
-/advanced-optimize Mooncake "端到端可观测性：metrics + tracing + logging"
-/advanced-optimize Mooncake "RDMA 链路故障的快速检测和透明降级"
+/advanced-optimize "CMake 构建并行化与增量编译"
+/advanced-optimize "端到端可观测性：metrics + tracing + logging"
+/advanced-optimize "RDMA 链路故障的快速检测和透明降级"
 ```
 
 ### 快速问答
@@ -108,7 +106,7 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 | **Transfer Engine / TENT** | `mooncake/transfer-engine/` | 4 | transport (RDMA/TCP/NVLink), tent (切片调度/遥测), memory (注册/分配器), topology (GPU-NIC/NUMA) |
 | **Mooncake Store** | `mooncake/store/` | 4 | storage-backend (DRAM/SSD/三级存储), master (HA/租约/驱逐), client (读写/连接池/P2P), replication (副本/亲和性/拓扑) |
 | **Conductor** | `mooncake/conductor/` | 1 | 哈希索引、前缀匹配、事件管线、多租户 |
-| **Framework Integrations** | `mooncake/integrations/` | 1 | pybind11 零拷贝、vLLM/SGLang 连接器 |
+| **Python Bindings & Integrations** | `mooncake/integrations/` | 1 | pybind11 零拷贝、异步 store、内存分配器 |
 | **Build & Deploy** | `mooncake/build-deploy/` | 1 | CMake 并行编译、CI/CD、Wheel 打包 |
 | **Operations & SRE** | `mooncake/operations/` | 1 | 可观测性、故障恢复、基准测试 |
 
@@ -142,8 +140,7 @@ MooncakeAgentSkills/
 │   │   ├── client/              #     客户端数据路径 (读写/连接/P2P)
 │   │   └── replication/         #     副本放置 (亲和性/拓扑感知)
 │   ├── conductor/               #   Conductor KV Indexer
-│   ├── conductor/               #   Conductor 优化
-│   ├── integrations/            #   框架集成优化
+│   ├── integrations/            #   Python 绑定与集成
 │   ├── build-deploy/            #   构建部署优化
 │   └── operations/              #   运维 SRE 优化
 ├── proposals/                   # 生成的优化方案 (.md)
@@ -189,13 +186,6 @@ domain_knowledge_agent                  MooncakeAgentSkills
 
 每个优化建议都经过 **6 维评估**（技术可行性、架构兼容性、性能收益、实现代价、风险等级、时机合适）后给出 **4 级评级**。
 
-## 后续计划
-
-- [ ] 支持 vLLM、SGLang、TensorRT-LLM 等更多推理框架
-- [ ] 方案效果追踪（proposal → implementation → benchmark）
-- [ ] 自动发现优化机会（基于代码 pattern 扫描）
-- [ ] 与 Mooncake 上游保持同步更新 repo-map.md
-
 ## License
 
-Copyright (c) 2026 LujhCoconut © LujhCoconut
+Copyright (c) 2026 LujhCoconut

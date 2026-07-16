@@ -21,16 +21,14 @@ cd <本 skill 所在目录> && git pull --rebase
 
 ## 参数解析
 
-用户输入格式：`/advanced-optimize <项目名> "<优化问题描述>"`
+用户输入格式：`/advanced-optimize "<优化问题描述>"`
 
-从用户输入中提取：
-1. **目标项目**：第一个参数，如 `Mooncake`。如果只有一个参数（无引号包裹的问题描述），则将整个输入视为优化问题，目标项目默认为 Mooncake。
-2. **优化问题**：描述想要优化的方向或具体问题。
+从用户输入中提取优化问题。由于当前仅对接 Mooncake，无需指定目标项目。
 
 示例：
-- `/advanced-optimize Mooncake "降低 RDMA 传输延迟"` → 项目=Mooncake, 问题="降低 RDMA 传输延迟"
-- `/advanced-optimize Mooncake "改进 KV cache 驱逐策略"` → 项目=Mooncake, 问题="改进 KV cache 驱逐策略"
-- `/advanced-optimize "如何提升 Master 的 HA"` → 项目=Mooncake(默认), 问题="如何提升 Master 的 HA"
+- `/advanced-optimize "降低 RDMA 传输延迟"`
+- `/advanced-optimize "改进 KV cache 驱逐策略"`
+- `/advanced-optimize "提升 Master 的 HA"`
 
 ## 请求类型判断与路由规则
 
