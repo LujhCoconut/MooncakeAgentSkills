@@ -1,6 +1,7 @@
 ---
 name: mooncake-agent-skills
 description: Mooncake 快速问答（通过 /mooncake-agent-skills qa 子命令调用）。回答 Mooncake 的常见问题，涵盖架构概念、环境配置、API 使用、RDMA 传输、分布式存储、框架集成、故障排查等。
+argument-hint: "\"<问题>\""
 ---
 
 # Mooncake Quick Q&A

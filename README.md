@@ -36,6 +36,8 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ## 使用示例
 
+> 输入 `/mooncake-agent-skills` 时，终端补全菜单显示参数提示 `[optimize|plan-feature|code-review|review|qa|clear-proposals] <参数>`（来自根 SKILL.md frontmatter 的 `argument-hint`）。子命令级提示（如 `clear-proposals [today|month|year]`、`review [all|comments|tests|errors|types|code|simplify]`）在提交后通过交互式问答（AskUserQuestion）递归呈现，格式与各子目录 SKILL.md 的 `argument-hint` 保持一致。
+
 ### 组件级优化分析
 
 ```bash

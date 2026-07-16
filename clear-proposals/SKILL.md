@@ -1,6 +1,7 @@
 ---
 name: mooncake-agent-skills
 description: 清理历史优化方案 — 按 today/month/year 时间范围删除 proposals，基于 git log 的最近 commit 时间判定
+argument-hint: "[today|month|year]"
 ---
 
 # clear-proposals — 清理历史方案

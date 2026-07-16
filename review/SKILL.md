@@ -1,6 +1,7 @@
 ---
 name: mooncake-agent-skills
 description: 本地代码审查 — 多维度并行 agent 分析 git diff，结构化输出审查报告
+argument-hint: "[all|comments|tests|errors|types|code|simplify]"
 ---
 
 # review — 本地代码审查

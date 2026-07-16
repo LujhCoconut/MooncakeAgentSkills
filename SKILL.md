@@ -1,6 +1,7 @@
 ---
 name: mooncake-agent-skills
 description: Mooncake 优化分析 · 代码审查 · 快速问答 · 功能设计。子命令 optimize（源码级优化+论文洞察+方案生成）、plan-feature（新功能设计+基础设施复用+方案生成）、code-review（GitHub PR 多 agent 审查）、review（本地 git diff 多维度审查）、qa（概念/配置/故障快速问答）、clear-proposals（按 today/month/year 清理历史方案）。覆盖 Transfer Engine、Store、Conductor、框架集成、构建部署、运维监控。
+argument-hint: "[optimize|plan-feature|code-review|review|qa|clear-proposals] <参数>"
 ---
 
 # Mooncake Agent Skills
@@ -61,6 +62,7 @@ cd <本 skill 所在目录> && git pull --rebase
 - 使用 `AskUserQuestion` 提供可点击的选项（比手动输入更友好）
 - 如果子命令只有一个默认选项（如 `review` 默认 `all`），在展示选项的同时标注默认值
 - `AskUserQuestion` 中始终包含 "Other" 选项供用户自由输入
+- 各子命令的参数提示格式以其子目录 `SKILL.md` frontmatter 的 `argument-hint` 为准（如 `clear-proposals` → `[today|month|year]`，`review` → `[all|comments|tests|errors|types|code|simplify]`）；新增/修改子命令参数时需同步更新对应 argument-hint。注意：终端输入行只显示根 SKILL.md 的 argument-hint（嵌套 SKILL.md 不是独立斜杠命令），子命令级提示由提交后的 AskUserQuestion 流程呈现
 
 ## 子命令解析
 

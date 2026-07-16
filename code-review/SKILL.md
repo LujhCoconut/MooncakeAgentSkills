@@ -1,6 +1,7 @@
 ---
 name: mooncake-agent-skills
 description: GitHub PR 自动化代码审查 — 多 agent 并行 + 置信度打分 + 对抗验证
+argument-hint: "<PR-URL 或 PR 号>"
 ---
 
 # code-review — GitHub PR 自动化审查

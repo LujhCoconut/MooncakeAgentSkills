@@ -1,6 +1,7 @@
 ---
 name: mooncake-agent-skills
 description: 新功能设计方案 — 分析现有基础设施可复用性 + 检索知识库设计模式 → 生成设计方案
+argument-hint: "\"<功能需求描述>\""
 ---
 
 # plan-feature — 新功能设计方案
