@@ -2,7 +2,7 @@
 
 ## 项目定位
 
-MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`），从领域知识库（domain_knowledge_agent）中检索论文洞察，评估其在真实代码仓库中的可应用性，并生成结构化优化方案。
+MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`），提供四个子命令：`optimize`（源码级优化分析）、`code-review`（GitHub PR 审查）、`review`（本地代码审查）、`qa`（快速问答）。与 domain_knowledge_agent 联动实现论文洞察驱动的优化方案生成。
 
 当前首个对接目标是 **Mooncake**（kvcache-ai/Mooncake），一个面向 LLM 推理的 KVCache 中心化解耦服务平台。
 
@@ -50,6 +50,32 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 
 **使用场景**：概念解释、配置问题、故障排查、API 使用。对应 `qa/KNOWLEDGE.md` 中的 30+ 预置 Q&A。
 
+### PR 审查 (`code-review` 子命令)
+
+```
+/mooncake-agent-skills code-review [PR URL 或 PR 号]
+  → 资格检查 (跳过 closed/draft/已审查 PR)
+  → 收集 CLAUDE.md 上下文
+  → 5 个并行 agent 独立审查 (CLAUDE.md 合规 ×2, bug 扫描, git blame 历史, 过往 PR 交叉引用)
+  → 置信度打分 (0-100)
+  → 过滤 ≥ 80 分
+  → gh CLI 回帖
+```
+
+**使用场景**：GitHub PR 自动化审查。需要 `gh` CLI 已认证。
+
+### 本地审查 (`review` 子命令)
+
+```
+/mooncake-agent-skills review [comments|tests|errors|types|code|simplify|all]
+  → 确定 git diff 范围
+  → 按维度启动专业化 agent (串行默认, parallel 并行)
+  → 聚合结果: Critical / Important / Suggestions / Strengths
+  → 仅报告置信度 ≥ 80 的问题
+```
+
+**使用场景**：提交前本地代码审查、pre-PR 检查。
+
 ## 与 domain_knowledge_agent 的交互
 
 三种交互方式，按优先级：
@@ -95,3 +121,12 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 - **区分事实与推断**：从代码和论文中读到的内容 vs. 基于经验的推断
 - **不重复已有方案**：生成方案前先检查 proposals/ 目录，避免重复
 - **遵循记忆中的反馈**：代码审查中的发现 ≠ merge blocker，评估时给出诚实的应用建议
+
+## 代码审查行为准则（`code-review` / `review` 子命令）
+
+- **对抗验证**：每个发现的问题都需要独立的置信度打分 agent 来尝试**反驳**——只有反驳不成立的问题才进入最终报告
+- **仅报告高置信度**：默认阈值 80（0-100 评分），低于阈值的问题不报告
+- **误报排除**：明确列出不报告的场景（已有问题、linter 可捕获、lint ignore 明确 silenced、非本 diff 引入等）
+- **区分严重度**：Critical (90-100) 和 Important (80-89)，报告中分别展示
+- **不修改代码**：审查只提问题，不直接修改。这与 optimize 子命令的「只提方案，不改代码」原则一致
+- **诚实评估合并状态**：即使发现多个低分问题，如果无一达到阈值，也应诚实地输出"No issues found"而非凑数

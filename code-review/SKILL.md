@@ -1,0 +1,124 @@
+---
+name: mooncake-agent-skills
+description: GitHub PR 自动化代码审查 — 多 agent 并行 + 置信度打分 + 对抗验证
+---
+
+# code-review — GitHub PR 自动化审查
+
+对 GitHub Pull Request 进行多 agent 并行 + 置信度打分的自动化代码审查，最终以结构化格式回帖到 PR。
+
+> 入口：`/mooncake-agent-skills code-review [PR URL 或 PR 号]`
+> 如果省略 PR 参数，自动从当前分支推导关联 PR。
+
+## 审查流程
+
+### Step 1: 资格检查
+
+用 Haiku agent 检查 PR 是否满足审查条件。以下情况跳过：
+- PR 已关闭 (closed)
+- PR 是草稿 (draft)
+- 不需要审查的自动化 PR（如 dependabot）
+- 已经由本方审查过（检查已有 review comments）
+
+### Step 2: 收集上下文
+
+用 Haiku agent 收集相关 CLAUDE.md 文件：
+- 仓库根目录的 CLAUDE.md（如果存在）
+- PR 修改文件所在目录的 CLAUDE.md
+- 返回文件路径列表（不返回内容）
+
+用另一个 Haiku agent 提取 PR 摘要：
+- 变更概述
+- 修改的文件列表
+- 关键改动点
+
+### Step 3: 多 Agent 并行审查
+
+启动 **5 个并行 Sonnet agent**，各从不同维度独立审查：
+
+| Agent | 视角 | 审查内容 |
+|-------|------|---------|
+| #1 | CLAUDE.md 合规 | 检查变更是否符合 CLAUDE.md 规范（注意：CLAUDE.md 是 Claude 写代码的指引，并非所有条目都适用于审查） |
+| #2 | 浅层 Bug 扫描 | 仅看 diff 本身，快速扫描明显 bug。聚焦大 bug，忽略小问题、nitpick、明显误报。避免读取 diff 外的上下文 |
+| #3 | 历史上下文 | 读取 git blame 和修改代码的历史，从历史演进角度发现潜在的上下文相关 bug |
+| #4 | 过往 PR 交叉引用 | 检查之前 touch 过这些文件的 PR，查看是否有仍然适用于当前 PR 的 review comments |
+| #5 | 代码注释一致性 | 读取修改文件中的代码注释，确保 PR 的变更与注释中的指引一致 |
+
+每个 agent 返回：问题列表 + 每个问题的原因说明（如 CLAUDE.md 违规、bug、历史上下文等）。
+
+### Step 4: 置信度打分
+
+对 Step 3 发现的每个问题，启动**并行 Haiku agent** 进行独立置信度打分（0-100）：
+
+| 分数 | 含义 |
+|------|------|
+| 0 | 不成立 — 明显误报，或已有问题 |
+| 25 | 低置信度 — 可能是真的，但也可能是误报。若是风格问题，未被 CLAUDE.md 明确要求 |
+| 50 | 中等 — 验证为真问题，但可能是 nitpick 或实践中不常触发 |
+| 75 | 高置信度 — 确认是真问题，会在实践中触发。很重要，直接影响功能，或被 CLAUDE.md 明确提及 |
+| 90-100 | 绝对确定 — 确认会高频触发，证据直接支持 |
+
+**对 CLAUDE.md 相关的 issue**：打分 agent 必须二次确认 CLAUDE.md 确实明确提及了该问题。
+
+### Step 5: 过滤与发布
+
+- 过滤：仅保留 ≥ 80 分的问题
+- 如果无高置信度问题 → 不发布评论，退出
+- 用 Haiku agent 再次执行资格检查（PR 状态可能在审查过程中变化）
+
+用 `gh` CLI 将结果回帖到 PR，格式如下：
+
+```
+## Code review
+
+Found N issues:
+
+1. <问题简述> (CLAUDE.md says "<相关条文>")
+
+<link: 完整 sha + 文件路径 + 行号范围, 如 https://github.com/owner/repo/blob/<full-sha>/path#L10-L15>
+
+2. <问题简述> (bug due to <文件和代码上下文>)
+
+<link>
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+```
+
+如无问题：
+
+```
+## Code review
+
+No issues found. Checked for bugs and CLAUDE.md compliance.
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+```
+
+## 误报排除指南
+
+以下情况**不报告**：
+
+- 已有问题 (pre-existing)，非 PR 引入
+- 看起来像 bug 但实际不是
+- 资深工程师不会指出的 pedantic nitpick
+- Linter / typechecker / 编译器会捕获的问题（无需手动跑这些工具）
+- 通用代码质量问题（缺乏测试覆盖、安全审计等），除非 CLAUDE.md 明确要求
+- 被 lint ignore comment 明确 silenced 的问题
+- 用户未修改行上的问题
+- 功能变更可能是故意的，属于 PR 的整体意图
+
+## 链接格式要求
+
+- 必须使用完整 git sha（不可缩写）
+- 格式：`https://github.com/owner/repo/blob/<full-sha>/path#Lstart-Lend`
+- 提供至少前后各 1 行上下文
+- 仓库名必须匹配审查的仓库
+
+## 依赖
+
+- `gh` CLI 已安装并认证
+- 当前目录为 git 仓库，关联 GitHub remote
+
+## 维护规则
+
+当本 SKILL.md 有实质性更新，必须同步检查并更新根 `README.md` 中的能力表和项目结构。

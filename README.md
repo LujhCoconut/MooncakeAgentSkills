@@ -6,7 +6,7 @@
 [![Target](https://img.shields.io/badge/Target-Mooncake-orange)](https://github.com/kvcache-ai/Mooncake)
 [![License](https://img.shields.io/badge/License-LujhCoconut-green)](./LICENSE)
 
-MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`）。它与 [domain_knowledge_agent](https://github.com/LujhCoconut/domain_knowledge_agent) 联动，自动扫描 **[Mooncake](https://github.com/kvcache-ai/Mooncake)**（Moonshot AI 开源的 KVCache 中心化 LLM 推理服务平台，FAST 2025 Best Paper）的源代码，检索论文洞察，评估可应用性，生成结构化优化方案。
+MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`）。它与 [domain_knowledge_agent](https://github.com/LujhCoconut/domain_knowledge_agent) 联动，自动扫描 **[Mooncake](https://github.com/kvcache-ai/Mooncake)**（Moonshot AI 开源的 KVCache 中心化 LLM 推理服务平台，FAST 2025 Best Paper）的源代码，检索论文洞察，评估可应用性，生成结构化优化方案。同时内置 GitHub PR 审查和本地代码审查能力。
 
 ---
 
@@ -16,8 +16,9 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 |------|------|------|
 | **组件级优化分析** | `/mooncake-agent-skills optimize "问题"` | 两级路由 → 源码分析 → 论文检索 → 方案生成 |
 | **排队论建模** | `/mooncake-agent-skills optimize "排队论分析"` | 输入硬件配置 → 14 个排队点自动估算延迟 → 瓶颈排名 |
+| **GitHub PR 审查** | `/mooncake-agent-skills code-review [PR]` | 5 并行 agent + 置信度打分 + `gh` 回帖 |
+| **本地代码审查** | `/mooncake-agent-skills review [aspects]` | git diff 多维度分析 → 结构化报告 |
 | **快速问答** | `/mooncake-agent-skills qa "问题"` | 概念 · 49 个配置参数 · 4 棵诊断树 · 11 个错误速查 |
-| **三视角理论** | `mooncake/architecture.md` | 分布式存储 + 高性能通信 + LLM Serving 统一模型 |
 
 ---
 
@@ -92,6 +93,28 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 **QA 覆盖**：概念与架构 (5)、配置参数大全 (49 项)、环境安装 (4)、Transfer Engine/RDMA (3)、Store (5)、故障排查 (4 棵诊断树 + 11 个错误速查)、性能调优 (4)。
 
+### PR 代码审查
+
+```bash
+# 审查 GitHub PR
+/mooncake-agent-skills code-review
+/mooncake-agent-skills code-review https://github.com/kvcache-ai/Mooncake/pull/1234
+```
+
+### 本地代码审查
+
+```bash
+# 全维度审查
+/mooncake-agent-skills review
+
+# 指定维度
+/mooncake-agent-skills review code errors
+/mooncake-agent-skills review simplify
+
+# 并行加速
+/mooncake-agent-skills review all parallel
+```
+
 ---
 
 ## Mooncake 组件覆盖
@@ -105,6 +128,8 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 | **Build & Deploy** | `mooncake/build-deploy/` | 1 | CMake 并行编译、CI/CD、Wheel 打包 |
 | **Operations & SRE** | `mooncake/operations/` | 1 | 可观测性、故障恢复、基准测试 |
 | **Queueing Theory** | `mooncake/queueing-theory/` | 1 | M/M/1 M/M/c M/G/1 模型、硬件查表、14 排队点延迟估算、瓶颈排名、4 场景分类器 |
+| **Code Review** | `code-review/` | 1 | GitHub PR 多 agent 并行审查 + 置信度打分 |
+| **Local Review** | `review/` | 1 | git diff 多维度分析 (comments/tests/errors/types/code/simplify) |
 | **Quick Q&A** | `qa/` | 1 | 49 配置参数、4 棵诊断树、11 错误速查 |
 
 > 子组件各自维护 `SKILL.md`（优化维度 + 领域知识映射）和 `KNOWLEDGE.md`（累积优化目标）。每个 SKILL.md 末尾有维护规则：任何实质性更新需同步检查 `README.md`。
@@ -115,7 +140,7 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ```
 MooncakeAgentSkills/
-├── SKILL.md                     # /mooncake-agent-skills 入口 (子命令 optimize / qa + git sync)
+├── SKILL.md                     # /mooncake-agent-skills 入口 (子命令 optimize/code-review/review/qa + git sync)
 ├── CLAUDE.md                    # 项目指令 (行为准则、扩展规范)
 ├── config.md                    # 仓库路径、远程地址、环境变量
 ├── LICENSE
@@ -145,6 +170,12 @@ MooncakeAgentSkills/
 │   ├── build-deploy/            #   CMake 并行编译·CI/CD·Wheel 打包
 │   ├── operations/              #   可观测性·故障恢复·Benchmark
 │   └── queueing-theory/         #   **排队论建模** (M/M/1 M/M/c M/G/1·14 排队点·硬件查表·瓶颈排名)
+│
+├── code-review/                 # GitHub PR 代码审查
+│   └── SKILL.md                 #   5 agent 并行 + 置信度打分 + gh 回帖
+│
+├── review/                      # 本地代码审查
+│   └── SKILL.md                 #   git diff 多维度 (comments/tests/errors/types/code/simplify)
 │
 ├── qa/                          # Mooncake 快速问答
 │   ├── SKILL.md                 #   qa 子命令入口
