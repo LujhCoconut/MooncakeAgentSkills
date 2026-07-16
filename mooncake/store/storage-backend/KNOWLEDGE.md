@@ -123,6 +123,32 @@
 
 ---
 
+## 云对象存储适配器集成（2026-07-16 初始分析）
+
+### 当前状态
+- Mooncake Store 支持四种存储后端: kBucket / kFilePerKey / kOffsetAllocator (本地 SSD) + kDistributed (分布式文件系统, 仅 hf3fs/3FS)
+- `DistributedStorageBackend` + `FileSystemAdapter` 已建立可扩展的后端适配器模式
+- `S3Helper` 已实现 Snapshot Object Store (HA 备份, `snapshot_object_store_type: "s3"`)，但不用于数据路径
+- `StorageBackendInterface` 接口: `BatchOffload()`, `BatchLoad()`, `IsExist()`, `ScanMeta()`, `IsEnableOffloading()`
+- `RealClient` 通过 `FileStorage` 使用单一 `StorageBackendInterface`
+- 无 hybrid backends 支持 (local + cloud)
+- KV cache 对象 immutable-after-put → 无覆盖写一致性问题
+
+### 实现要点
+- **P0**: 新增 `CloudObjectStoreAdapter` (实现 `FileSystemAdapter`): S3/OSS/COS API 映射 (PUT/GET/DELETE/LIST/HEAD)，multipart 上传，连接池，指数退避重试
+- **P1**: 混合后端 (Latte 模式): 本地 SSD → 高水位触发 → 云存储 offload；读路径双级 fallback
+- **P2**: 写入缓冲 (TapeOBS 模式): 本地 SSD 吸收 writes → bucket 满后批量上传 → 减少 API 调用成本
+- **P3**: 多厂商适配 (GCS/Azure Blob native SDK)
+- 详见: `proposals/mooncake-store-cloud-storage-integration-2026-07-16.md`
+
+### 相关领域知识
+- Latte(FAST'26): 本地-云混合存储, S3-FIFO 缓存, ML-based I/O dispatch
+- TapeOBS(FAST'26): 全异步 + HDD 缓冲 + 批量调度
+- OBASE(OSDI'26): 对象级冷热分离, page utilization
+- ACOS(FAST'26): immutable sealed container, 两层故障分离
+
+---
+
 ## 内存分配器并发优化（初始分析）
 
 ### 当前状态
