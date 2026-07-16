@@ -2,7 +2,7 @@
 
 ## 项目定位
 
-MooncakeAgentSkills 是一个 **Claude Code Skill**，提供 `/advanced-optimize` 命令，从领域知识库（domain_knowledge_agent）中检索论文洞察，评估其在真实代码仓库中的可应用性，并生成结构化优化方案。
+MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`），从领域知识库（domain_knowledge_agent）中检索论文洞察，评估其在真实代码仓库中的可应用性，并生成结构化优化方案。
 
 当前首个对接目标是 **Mooncake**（kvcache-ai/Mooncake），一个面向 LLM 推理的 KVCache 中心化解耦服务平台。
 
@@ -21,10 +21,10 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**，提供 `/advanced-optimize
 
 ## 核心工作流
 
-### 优化分析 (`/advanced-optimize`)
+### 优化分析 (`/mooncake-agent-skills`)
 
 ```
-/advanced-optimize <项目名> "<优化问题描述>"
+/mooncake-agent-skills "<优化问题描述>"
   → git pull (本 repo + Mooncake 源码)
   → 读取 architecture.md (三视角统一模型)
   → 路由到项目目录（mooncake/）

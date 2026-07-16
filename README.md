@@ -6,7 +6,7 @@
 [![Target](https://img.shields.io/badge/Target-Mooncake-orange)](https://github.com/kvcache-ai/Mooncake)
 [![License](https://img.shields.io/badge/License-LujhCoconut-green)](./LICENSE)
 
-MooncakeAgentSkills 是一个 **Claude Code Skill**，提供 `/advanced-optimize` 命令。它与 [domain_knowledge_agent](https://github.com/LujhCoconut/domain_knowledge_agent) 联动，自动扫描 **[Mooncake](https://github.com/kvcache-ai/Mooncake)**（Moonshot AI 开源的 KVCache 中心化 LLM 推理服务平台，FAST 2025 Best Paper）的源代码，检索论文洞察，评估可应用性，生成结构化优化方案。
+MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`）。它与 [domain_knowledge_agent](https://github.com/LujhCoconut/domain_knowledge_agent) 联动，自动扫描 **[Mooncake](https://github.com/kvcache-ai/Mooncake)**（Moonshot AI 开源的 KVCache 中心化 LLM 推理服务平台，FAST 2025 Best Paper）的源代码，检索论文洞察，评估可应用性，生成结构化优化方案。
 
 ---
 
@@ -14,8 +14,8 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**，提供 `/advanced-optimize
 
 | 能力 | 入口 | 说明 |
 |------|------|------|
-| **组件级优化分析** | `/advanced-optimize "问题"` | 两级路由 → 源码分析 → 论文检索 → 方案生成 |
-| **排队论建模** | `/advanced-optimize "排队论分析"` | 输入硬件配置 → 14 个排队点自动估算延迟 → 瓶颈排名 |
+| **组件级优化分析** | `/mooncake-agent-skills "问题"` | 两级路由 → 源码分析 → 论文检索 → 方案生成 |
+| **排队论建模** | `/mooncake-agent-skills "排队论分析"` | 输入硬件配置 → 14 个排队点自动估算延迟 → 瓶颈排名 |
 | **快速问答** | `/mooncake-qa "问题"` | 概念 · 49 个配置参数 · 4 棵诊断树 · 11 个错误速查 |
 | **三视角理论** | `mooncake/architecture.md` | 分布式存储 + 高性能通信 + LLM Serving 统一模型 |
 
@@ -39,19 +39,19 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ```bash
 # Transfer Engine
-/advanced-optimize "降低 RDMA 传输延迟"
-/advanced-optimize "TENT 多路径切片调度如何自适应链路质量"
-/advanced-optimize "GPU-NIC 拓扑发现是否可用于调度优化"
+/mooncake-agent-skills "降低 RDMA 传输延迟"
+/mooncake-agent-skills "TENT 多路径切片调度如何自适应链路质量"
+/mooncake-agent-skills "GPU-NIC 拓扑发现是否可用于调度优化"
 
 # Mooncake Store
-/advanced-optimize "改进 KV cache 驱逐策略，引入访问频率感知"
-/advanced-optimize "Master 元数据服务如何实现高可用"
-/advanced-optimize "G1→G2→G3 三级存储的迁移策略优化"
+/mooncake-agent-skills "改进 KV cache 驱逐策略，引入访问频率感知"
+/mooncake-agent-skills "Master 元数据服务如何实现高可用"
+/mooncake-agent-skills "G1→G2→G3 三级存储的迁移策略优化"
 
 # Conductor · Integrations · Build · Operations
-/advanced-optimize "Conductor 前缀缓存索引结构优化"
-/advanced-optimize "pybind11 Python 绑定零拷贝路径验证"
-/advanced-optimize "端到端可观测性：metrics + tracing + logging"
+/mooncake-agent-skills "Conductor 前缀缓存索引结构优化"
+/mooncake-agent-skills "pybind11 Python 绑定零拷贝路径验证"
+/mooncake-agent-skills "端到端可观测性：metrics + tracing + logging"
 ```
 
 ### 排队论建模与延迟估算
@@ -60,15 +60,15 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ```bash
 # 使用默认参数快速扫描
-/advanced-optimize "对 Mooncake 进行排队论分析"
+/mooncake-agent-skills "对 Mooncake 进行排队论分析"
 
 # 带入具体硬件
-/advanced-optimize "排队论分析: ConnectX-7 400Gbps, 8×H100, Samsung PM9A3 NVMe×4,
+/mooncake-agent-skills "排队论分析: ConnectX-7 400Gbps, 8×H100, Samsung PM9A3 NVMe×4,
                    QPS=100, avg_prompt=4000t, avg_decode=800t, model=Llama-70B"
 
 # 特定场景
-/advanced-optimize "PD 分离场景下 Prefill→Decode KV cache 传输的排队延迟估算"
-/advanced-optimize "G3 NVMe SSD 层的队列深度和延迟瓶颈分析"
+/mooncake-agent-skills "PD 分离场景下 Prefill→Decode KV cache 传输的排队延迟估算"
+/mooncake-agent-skills "G3 NVMe SSD 层的队列深度和延迟瓶颈分析"
 ```
 
 **排队论模块能力**：
@@ -115,7 +115,7 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ```
 MooncakeAgentSkills/
-├── SKILL.md                     # /advanced-optimize 入口 (路由 + pre/post git sync)
+├── SKILL.md                     # /mooncake-agent-skills 入口 (路由 + pre/post git sync)
 ├── CLAUDE.md                    # 项目指令 (行为准则、扩展规范)
 ├── config.md                    # 仓库路径、远程地址、环境变量
 ├── LICENSE
