@@ -119,7 +119,7 @@ Mooncake 是一个 KVCache 中心化的 LLM 推理服务平台，采用三层架
 
 - 按 common/SKILL.md 中的评估框架判断可应用性
 - 按根 SKILL.md 中的模板生成方案
-- 输出到 proposals/ 并更新 KNOWLEDGE.md
+- 输出到 proposals/（方案内容不回写 KNOWLEDGE.md，其由人工维护）
 
 ## 组件间交叉分析
 

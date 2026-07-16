@@ -146,7 +146,7 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 | **Quick Q&A** | `qa/` | 1 | 49 配置参数、4 棵诊断树、11 错误速查 |
 | **Housekeeping** | `clear-proposals/` | 1 | 按 today/month/year 清理历史方案 |
 
-> 子组件各自维护 `SKILL.md`（优化维度 + 领域知识映射）和 `KNOWLEDGE.md`（累积优化目标）。每个 SKILL.md 末尾有维护规则：任何实质性更新需同步检查 `README.md`。
+> 子组件各自维护 `SKILL.md`（优化维度 + 领域知识映射）和 `KNOWLEDGE.md`（优化目标知识，人工维护，optimize/plan-feature 的方案内容不回写）。每个 SKILL.md 末尾有维护规则：任何实质性更新需同步检查 `README.md`。
 
 ---
 

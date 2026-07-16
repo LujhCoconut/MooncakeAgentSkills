@@ -13,7 +13,7 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 | 文件 | 类型 | 用途 |
 |------|------|------|
 | `SKILL.md` | 路由/指令型 | Skill 入口、路由规则、分析流程说明 |
-| `KNOWLEDGE.md` | 知识型 | 累积的优化目标知识 (mooncake) 或 Q&A 对 (qa) |
+| `KNOWLEDGE.md` | 知识型 | 优化目标知识 (mooncake，人工维护) 或 Q&A 对 (qa) |
 | `CLAUDE.md` | 项目指令型 | 本文件，Claude Code 加载的项目级行为准则 |
 | `config.md` | 配置型 | 仓库路径、远程地址等配置 |
 | `repo-map.md` | 映射型 | 目标仓库的目录→组件映射表 |
@@ -153,6 +153,7 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 - **引用来源**：每个建议都标注引用的论文和 KNOWLEDGE.md 路径
 - **区分事实与推断**：从代码和论文中读到的内容 vs. 基于经验的推断
 - **不重复已有方案**：生成方案前先检查 `proposals/optimize/` 和 `proposals/feature/` 目录，避免重复
+- **proposal 不回写 KNOWLEDGE.md**：optimize / plan-feature 的方案内容只写入 `proposals/` 和 `history/optimization-log.md`；组件 `KNOWLEDGE.md` 由人工维护，本 skill 对其只读不写（`qa/KNOWLEDGE.md` 的用户主动追加除外）
 - **先预览再写入**：optimize 和 plan-feature 在生成完整方案前必须先展示预览表格，用户确认后才写入文件
 - **审查已有代码**：Phase 4.5 必须审查相关已有代码（完整函数 + 调用链），避免优化建议/设计方案忽略已实现功能
 - **遵循记忆中的反馈**：代码审查中的发现 ≠ merge blocker，评估时给出诚实的应用建议
