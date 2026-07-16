@@ -77,7 +77,7 @@ Mooncake 是一个 KVCache 中心化的 LLM 推理服务平台，采用三层架
 | **Framework Integrations** | `integrations/` | Python 绑定、框架连接器 | vLLM, SGLang, TensorRT-LLM, LMDeploy, LMCache, connector, 连接器, integration, 集成, framework, 框架, python, pybind, binding, allocator, 分配器 |
 | **Build & Deploy** | `build-deploy/` | 编译构建、依赖管理、发布 | build, 构建, compile, 编译, CMake, dependency, 依赖, wheel, install, 安装, deploy, 部署, CI/CD, packaging, 打包, docker, container, 容器 |
 | **Cross-Cutting Operations** | `operations/` | 监控、日志、benchmark、SRE | monitor, 监控, log, 日志, alert, 告警, SRE, benchmark, 压测, 基准测试, profile, 性能分析, debug, 调试, error, 错误, recovery, 恢复, health check, 健康检查, observability, 可观测性, tracing, metrics, 指标 |
-| **Queueing Theory** | `queueing-theory/` | 排队论建模分析、端到端延迟估算、瓶颈定位 | queueing, 排队论, 排队, M/M/1, M/M/c, 延迟建模, 队列深度, 瓶颈分析, bottleneck, latency model, utilization, 利用率, 等待时间, Pollaczek-Khinchine, Erlang, Little's Law, ρ |
+| **Queueing Theory** | `queueing-theory/` | 排队论建模：13+1 排队点自动估算延迟、瓶颈排名、场景分类 | queueing, 排队论, 排队, M/M/1, M/M/c, 延迟建模, 队列深度, 瓶颈分析, bottleneck, latency model, utilization, 利用率, 等待时间, SSD队列, NVMe队列, nvme qd, 拥塞分析, 吞吐估算, 容量规划 |
 
 ## 路由逻辑
 
@@ -85,7 +85,8 @@ Mooncake 是一个 KVCache 中心化的 LLM 推理服务平台，采用三层架
 2. **精确匹配**：如果用户在优化问题中明确提到子组件名（如 "TENT 的切片调度"、"Master 的 HA"），直接路由到对应子组件
 3. **关键词匹配**：根据上表匹配最多关键词的组件→子组件
 4. **多组件匹配**：如果问题涉及多个组件（如 "Transfer Engine 和 Store 之间的交互优化"），路由到所有相关组件及其子组件，合并分析结果
-5. **兜底路由**：如果问题无法明确归类（如 "如何优化 Mooncake 的整体性能"），路由到所有组件，生成综合方案
+5. **排队论分析**：如果问题涉及延迟建模、瓶颈定位、容量规划 → 路由到 `queueing-theory/SKILL.md`，按 §一 场景分类器自动识别（PD分离/高QPS/G3频繁访问/Conductor瓶颈 四种场景），提取用户提供的硬件配置，自动计算所有排队点延迟
+6. **兜底路由**：如果问题无法明确归类，路由到所有相关组件，生成综合方案
 
 ## 分析流程
 
