@@ -26,6 +26,42 @@ cd <本 skill 所在目录> && git pull --rebase
 - 如果 pull 因网络问题失败 → 告知用户"⚠️ 无法同步远程仓库，继续使用本地版本"，不阻塞后续操作
 - 如果 pull 产生冲突 → 告知用户"⚠️ git pull 产生冲突，请手动解决"，继续处理用户请求不阻塞
 
+## 交互式提示（无参数或参数不完整时自动触发）
+
+**当用户输入 `/mooncake-agent-skills` 不带任何参数时**，不静默执行默认操作，而是主动展示子命令选项并引导选择：
+
+```markdown
+请选择子命令：
+
+| 子命令 | 用途 | 输入示例 |
+|--------|------|---------|
+| `optimize` | 源码级优化分析 | `/mooncake-agent-skills optimize "降低 RDMA 传输延迟"` |
+| `plan-feature` | 新功能设计方案 | `/mooncake-agent-skills plan-feature "Store 对接云存储"` |
+| `code-review` | GitHub PR 审查 | `/mooncake-agent-skills code-review https://github.com/.../pull/123` |
+| `review` | 本地代码审查 | `/mooncake-agent-skills review` 或 `/mooncake-agent-skills review errors` |
+| `qa` | 快速问答 | `/mooncake-agent-skills qa "RDMA QP 报错怎么办"` |
+| `clear-proposals` | 清理历史方案 | `/mooncake-agent-skills clear-proposals today` |
+```
+
+然后使用 `AskUserQuestion` 询问用户选择哪个子命令。
+
+**当用户输入了子命令但缺少必要参数时**，递归展示该子命令的选项：
+
+| 子命令 | 缺少参数时的提示 |
+|--------|-----------------|
+| `optimize` | 提示「请输入优化问题描述，例如 "降低 RDMA 传输延迟"」 |
+| `plan-feature` | 提示「请输入功能需求描述，例如 "Store 对接云存储需要实现什么"」 |
+| `code-review` | 提示「请提供 PR URL 或 PR 号」 |
+| `review` | 展示维度选项：`[all]`（默认）\| `comments` \| `tests` \| `errors` \| `types` \| `code` \| `simplify`，提示「请选择审查维度，默认 all」 |
+| `qa` | 提示「请输入你的问题」 |
+| `clear-proposals` | 展示时间范围选项：`today` \| `month` \| `year`，提示「请选择时间范围」 |
+
+**递归提示原则**：
+- 从子命令 → 子选项 → 直到所有必要参数齐全才开始执行
+- 使用 `AskUserQuestion` 提供可点击的选项（比手动输入更友好）
+- 如果子命令只有一个默认选项（如 `review` 默认 `all`），在展示选项的同时标注默认值
+- `AskUserQuestion` 中始终包含 "Other" 选项供用户自由输入
+
 ## 子命令解析
 
 从用户输入中识别子命令和参数：
