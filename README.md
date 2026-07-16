@@ -93,6 +93,15 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 **QA 覆盖**：概念与架构 (5)、配置参数大全 (49 项)、环境安装 (4)、Transfer Engine/RDMA (3)、Store (5)、故障排查 (4 棵诊断树 + 11 个错误速查)、性能调优 (4)。
 
+### 清理历史方案
+
+```bash
+# 按时间范围清理 proposals（基于 git commit 时间）
+/mooncake-agent-skills clear-proposals today     # 今天的方案
+/mooncake-agent-skills clear-proposals month     # 本月的方案
+/mooncake-agent-skills clear-proposals year      # 今年的方案
+```
+
 ### PR 代码审查
 
 ```bash
@@ -115,6 +124,10 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 /mooncake-agent-skills review all parallel
 ```
 
+> **⚠️ 平台依赖**：`code-review` 和 `review` 子命令的审查流程**完全依赖 Claude Code 的 Agent 多模型编排能力**（Haiku 资格检查 + Sonnet 并行审查 + 置信度打分）。移植到 ChatGPT Codex / Kimi Code / Z-Code 等其他 AI 编程工具时，需要对应平台的类似能力（多模型并行调用、独立的 confidence scoring agent），否则审查质量会显著下降。
+
+### 清理历史方案
+
 ---
 
 ## Mooncake 组件覆盖
@@ -128,9 +141,10 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 | **Build & Deploy** | `mooncake/build-deploy/` | 1 | CMake 并行编译、CI/CD、Wheel 打包 |
 | **Operations & SRE** | `mooncake/operations/` | 1 | 可观测性、故障恢复、基准测试 |
 | **Queueing Theory** | `mooncake/queueing-theory/` | 1 | M/M/1 M/M/c M/G/1 模型、硬件查表、14 排队点延迟估算、瓶颈排名、4 场景分类器 |
-| **Code Review** | `code-review/` | 1 | GitHub PR 多 agent 并行审查 + 置信度打分 |
-| **Local Review** | `review/` | 1 | git diff 多维度分析 (comments/tests/errors/types/code/simplify) |
+| **Code Review** | `code-review/` | 1 | GitHub PR 多 agent 并行审查 + 置信度打分（依赖 Claude Code） |
+| **Local Review** | `review/` | 1 | git diff 多维度分析 (comments/tests/errors/types/code/simplify)（依赖 Claude Code） |
 | **Quick Q&A** | `qa/` | 1 | 49 配置参数、4 棵诊断树、11 错误速查 |
+| **Housekeeping** | `clear-proposals/` | 1 | 按 today/month/year 清理历史方案 |
 
 > 子组件各自维护 `SKILL.md`（优化维度 + 领域知识映射）和 `KNOWLEDGE.md`（累积优化目标）。每个 SKILL.md 末尾有维护规则：任何实质性更新需同步检查 `README.md`。
 
@@ -172,10 +186,13 @@ MooncakeAgentSkills/
 │   └── queueing-theory/         #   **排队论建模** (M/M/1 M/M/c M/G/1·14 排队点·硬件查表·瓶颈排名)
 │
 ├── code-review/                 # GitHub PR 代码审查
-│   └── SKILL.md                 #   5 agent 并行 + 置信度打分 + gh 回帖
+│   └── SKILL.md                 #   5 agent 并行 + 置信度打分 + gh 回帖（依赖 Claude Code）
 │
 ├── review/                      # 本地代码审查
-│   └── SKILL.md                 #   git diff 多维度 (comments/tests/errors/types/code/simplify)
+│   └── SKILL.md                 #   git diff 多维度 (comments/tests/errors/types/code/simplify)（依赖 Claude Code）
+│
+├── clear-proposals/             # 历史方案清理
+│   └── SKILL.md                 #   按 today/month/year 清理 proposals
 │
 ├── qa/                          # Mooncake 快速问答
 │   ├── SKILL.md                 #   qa 子命令入口
