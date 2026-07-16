@@ -4,7 +4,7 @@
 
 [![Skill](https://img.shields.io/badge/Claude%20Code-Skill-blue)](https://claude.ai/code)
 [![Target](https://img.shields.io/badge/Target-Mooncake-orange)](https://github.com/kvcache-ai/Mooncake)
-[![License](https://img.shields.io/badge/License-MIT-green)](./LICENSE)
+[![License](https://img.shields.io/badge/License-LujhCoconut-green)](./LICENSE)
 
 MooncakeAgentSkills 是一个 **Claude Code Skill**，提供 `/advanced-optimize` 命令。它与 [domain_knowledge_agent](https://github.com/LujhCoconut/domain_knowledge_agent) 联动，自动扫描代码仓库、检索论文洞察、评估可应用性并生成结构化优化方案。
 
@@ -182,4 +182,4 @@ domain_knowledge_agent                  MooncakeAgentSkills
 
 ## License
 
-MIT © LujhCoconut
+Copyright (c) 2026 LujhCoconut © LujhCoconut
