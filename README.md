@@ -113,6 +113,7 @@ MooncakeAgentSkills/
 │   └── SKILL.md                 #   优化模式目录 (35+ 模式)、6 步分析流程、
 │                               #   6 维评估框架、反模式警示
 ├── mooncake/                    # Mooncake 专项技能
+│   ├── architecture.md          #   **三视角统一模型** (分布式存储 + 高性能通信 + LLM Serving)
 │   ├── SKILL.md                 #   组件路由器 (两级路由)
 │   ├── repo-map.md              #   源码树 → 子组件映射 (含子组件标注)
 │   ├── transfer-engine/         #   Transfer Engine / TENT

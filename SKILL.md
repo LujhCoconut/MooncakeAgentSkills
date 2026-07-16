@@ -153,9 +153,10 @@ cd <本 skill 所在目录> && git pull --rebase
 
 - `common/SKILL.md` — 跨项目通用优化方法论、模式目录、评估框架
 - `mooncake/SKILL.md` — Mooncake 项目路由（按组件分发）
+- `mooncake/architecture.md` — **Mooncake 三视角统一模型**（分布式存储 + 高性能通信 + LLM Serving）
 - `mooncake/repo-map.md` — Mooncake 源代码树→组件映射
-- `mooncake/transfer-engine/SKILL.md` — Transfer Engine / TENT 优化
-- `mooncake/store/SKILL.md` — Mooncake Store 优化
+- `mooncake/transfer-engine/SKILL.md` — Transfer Engine 路由 → transport/tent/memory/topology
+- `mooncake/store/SKILL.md` — Store 路由 → storage-backend/master/client/replication
 - `mooncake/conductor/SKILL.md` — Conductor (KV Indexer) 优化
 - `mooncake/integrations/SKILL.md` — 框架集成优化
 - `mooncake/build-deploy/SKILL.md` — 构建与部署优化
