@@ -132,3 +132,8 @@ Mooncake 是一个 KVCache 中心化的 LLM 推理服务平台，采用三层架
 | Python 绑定层的序列化开销 | integrations + transfer-engine | pybind11 ↔ C++ 的数据拷贝 |
 | 端到端延迟分析 | transfer-engine + store + integrations | 请求全路径追踪 |
 | 部署拓扑优化 | build-deploy + operations | 编译选项 × 运行时配置的协同 |
+
+
+## ⚠️ 维护规则
+
+**当本 SKILL.md 有实质性更新（新增优化维度、修改分析流程、更新路由规则、新增领域知识映射等），必须同步检查并更新 `README.md` 中对应的项目结构、组件覆盖表、使用示例或模块说明。** 保持 README 始终反映最新的 skill 能力边界。

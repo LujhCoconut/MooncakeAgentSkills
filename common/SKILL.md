@@ -134,3 +134,8 @@
 | 分布式一致性 | `algorithms/distributed-consensus/`, `architecture/cloud-native/` |
 | 运维与可靠性 | `operations/cloud-infrastructure/`, `operations/monitoring-observability/` |
 | 安全 | `security/os-security/` |
+
+
+## ⚠️ 维护规则
+
+**当本 SKILL.md 有实质性更新（新增优化维度、修改分析流程、更新路由规则、新增领域知识映射等），必须同步检查并更新 `README.md` 中对应的项目结构、组件覆盖表、使用示例或模块说明。** 保持 README 始终反映最新的 skill 能力边界。
