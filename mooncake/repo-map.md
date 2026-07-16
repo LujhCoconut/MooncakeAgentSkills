@@ -2,53 +2,56 @@
 
 本文档维护 Mooncake 源代码树到各组件的映射关系。当 Mooncake 仓库结构变化时需同步更新。
 
-> **最后更新**: 2026-07-14
+> **最后更新**: 2026-07-16
+> **变更**: 新增子组件映射 — transfer-engine 拆为 transport/tent/memory/topology，store 拆为 storage-backend/master/client/replication
 > **基于 Mooncake commit**: 当前 main 分支
 
 ---
 
 ## Transfer Engine / TENT
 
+> **子组件映射**: transport / tent / memory / topology（详见各子目录 SKILL.md）
+
 ### 核心源代码
 ```
 mooncake-transfer-engine/
 ├── include/
-│   ├── transfer_engine.h              # TransferEngine 主接口 (init, registerMemory, submitTransfer, getTransferStatus...)
+│   ├── transfer_engine.h              # TransferEngine 主接口
 │   ├── transfer_engine_c.h            # C FFI
-│   ├── cuda_alike.h                   # 跨 GPU 厂商统一抽象 (NVIDIA/AMD/Ascend/MUSA/MLU/MACA)
+│   ├── cuda_alike.h                   # 跨 GPU 厂商统一抽象
 │   ├── common.h                       # 公共类型定义
-│   ├── transport/                     # 传输协议抽象接口
+│   ├── transport/                     # [transport] 传输协议抽象接口
 │   │   └── transport.h                # Transport 基类
-│   └── tent/                          # TENT 运行时 API
+│   └── tent/                          # [tent] TENT 运行时 API
 │       ├── tent_runtime.h
 │       └── tent_config.h
 ├── src/
 │   ├── transfer_engine.cpp            # TransferEngine 核心实现
-│   ├── transfer_metadata*.cpp/h       # 传输元数据管理 (RDMA/TCP 连接信息交换)
-│   ├── transport/                     # 各协议实现
-│   │   ├── rdma_transport.cpp         # RDMA (InfiniBand / RoCE / eRDMA) 传输
-│   │   ├── tcp_transport.cpp          # TCP 传输
-│   │   ├── nvlink_transport.cpp       # NVLink 传输
-│   │   ├── efa_transport.cpp          # AWS EFA 传输
-│   │   ├── cxl_transport.cpp          # CXL 传输
-│   │   ├── nvmeof_transport.cpp       # NVMe-oF 传输
-│   │   ├── ascend_transport.cpp       # 华为 Ascend 直连传输
-│   │   └── shm_transport.cpp          # 共享内存传输
-│   ├── memory_location.cpp            # 内存位置抽象 (DRAM/VRAM/NPU)
-│   ├── topology.cpp                   # GPU-NIC 拓扑发现
-│   └── multi_transport.cpp            # 多协议混合传输
-├── tent/                              # TENT (Transfer Engine NEXT)
+│   ├── transfer_metadata*.cpp/h       # 传输元数据管理
+│   ├── transport/                     # [transport] 各协议实现
+│   │   ├── rdma_transport.cpp         #   RDMA (IB/RoCE/eRDMA)
+│   │   ├── tcp_transport.cpp          #   TCP
+│   │   ├── nvlink_transport.cpp       #   NVLink
+│   │   ├── efa_transport.cpp          #   AWS EFA
+│   │   ├── cxl_transport.cpp          #   CXL
+│   │   ├── nvmeof_transport.cpp       #   NVMe-oF
+│   │   ├── ascend_transport.cpp       #   Ascend Direct
+│   │   └── shm_transport.cpp          #   共享内存
+│   ├── memory_location.cpp            # [memory] 内存位置抽象
+│   ├── topology.cpp                   # [topology] GPU-NIC 拓扑发现
+│   └── multi_transport.cpp            # [transport] 多协议混合
+├── tent/                              # [tent] TENT 下一代运行时
 │   ├── runtime/
-│   │   ├── slice_scheduler.cpp        # 切片调度器（多路径并行）
-│   │   ├── transport_selector.cpp     # 动态传输协议选择
-│   │   └── telemetry_collector.cpp    # 遥测数据收集
+│   │   ├── slice_scheduler.cpp        #   切片调度器
+│   │   ├── transport_selector.cpp     #   动态协议选择
+│   │   └── telemetry_collector.cpp    #   遥测收集
 │   ├── config/
-│   │   └── tent_config.yaml           # TENT 配置文件模板
+│   │   └── tent_config.yaml           #   配置模板
 │   └── benchmark/
-│       └── tent_bench.cpp             # TENT 基准测试
-└── nvlink-allocator/
-    ├── nvlink_allocator.h             # NVLink 内存分配器接口
-    └── nvlink_allocator.cpp           # NVLink 内存分配器实现
+│       └── tent_bench.cpp             #   基准测试
+└── nvlink-allocator/                  # [memory] NVLink 内存分配器
+    ├── nvlink_allocator.h
+    └── nvlink_allocator.cpp
 ```
 
 ### 关键类/函数
@@ -71,35 +74,37 @@ mooncake-transfer-engine/
 
 ## Mooncake Store
 
+> **子组件映射**: storage-backend / master / client / replication（详见各子目录 SKILL.md）
+
 ### 核心源代码
 ```
 mooncake-store/
 ├── include/
-│   ├── real_client.h                  # RealClient 接口 (put/get/put_from/get_into)
-│   ├── store_c.h                      # C FFI (mooncake_store_setup/put/get_into)
-│   ├── p2p_store.h                    # P2P Store 接口
-│   └── types.h                        # 数据结构定义 (ObjectState, SegmentInfo, ReplicaInfo)
+│   ├── real_client.h                  # [client] RealClient 接口
+│   ├── store_c.h                      # [client] C FFI
+│   ├── p2p_store.h                    # [client] P2P Store 接口
+│   └── types.h                        # 公共数据结构
 ├── src/
-│   ├── mooncake_master/               # Master 元数据协调服务
-│   │   ├── master_service.cpp         # Master 主逻辑 (segment 分配/驱逐/租约)
-│   │   ├── segment_manager.cpp        # 分段管理器
-│   │   ├── eviction_manager.cpp       # 驱逐管理器 (LRU/TTL)
-│   │   ├── replica_manager.cpp        # 副本管理器
-│   │   ├── lease_manager.cpp          # 租约管理器 (TTL/软硬超时)
-│   │   └── metadata_store.cpp         # 元数据持久化 (HTTP/ETCD/Redis 后端)
-│   ├── mooncake_client/               # 客户端实现
-│   │   ├── real_client.cpp            # RealClient 实现（直接 RDMA + 内存管理）
-│   │   ├── dummy_client.cpp           # DummyClient（RPC 代理模式）
-│   │   └── client_allocator.cpp       # 客户端侧内存分配
-│   ├── p2p_store.cpp                  # P2P Store 实现
-│   ├── storage_backend.cpp            # 存储后端抽象 (DRAM/SSD)
-│   ├── tiered_storage.cpp             # 三级存储管理 (G1 GPU HBM / G2 CPU DRAM / G3 NVMe SSD)
-│   └── transfer_task_scheduler.cpp    # 传输任务调度
+│   ├── mooncake_master/               # [master] Master 元数据协调服务
+│   │   ├── master_service.cpp         #   Master 主逻辑
+│   │   ├── segment_manager.cpp        #   分段管理器
+│   │   ├── eviction_manager.cpp       #   驱逐管理器
+│   │   ├── replica_manager.cpp        # [replication] 副本管理器
+│   │   ├── lease_manager.cpp          #   租约管理器
+│   │   └── metadata_store.cpp         #   元数据持久化
+│   ├── mooncake_client/               # [client] 客户端实现
+│   │   ├── real_client.cpp            #   RealClient (RDMA + 内存管理)
+│   │   ├── dummy_client.cpp           #   DummyClient (RPC 代理)
+│   │   └── client_allocator.cpp       # [storage-backend] 客户端侧内存分配
+│   ├── p2p_store.cpp                  # [client] P2P Store
+│   ├── storage_backend.cpp            # [storage-backend] DRAM/SSD 后端
+│   ├── tiered_storage.cpp             # [storage-backend] 三级存储 (G1/G2/G3)
+│   └── transfer_task_scheduler.cpp    # [client] 传输任务调度
 ├── tools/
 │   ├── mc_store_rest_server.cpp       # REST API 服务器
 │   └── store_bench.cpp                # Store 基准测试
 └── cmake/
-    └── store.cmake                    # Store 构建配置
+    └── store.cmake
 ```
 
 ### 关键类/函数

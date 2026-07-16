@@ -90,16 +90,16 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ## Mooncake 组件覆盖
 
-| 组件 | 目录 | 优化维度数 | 种子优化目标 |
-|------|------|:--------:|:--------:|
-| **Transfer Engine / TENT** | `mooncake/transfer-engine/` | 7 | RDMA 延迟、批量调度、TENT 切片 |
-| **Mooncake Store** | `mooncake/store/` | 7 | HA、驱逐策略、三级存储迁移 |
-| **Conductor** | `mooncake/conductor/` | 5 | 索引结构、事件吞吐、命中率 |
-| **Framework Integrations** | `mooncake/integrations/` | 5 | 零拷贝、vLLM 内存、HiCache |
-| **Build & Deploy** | `mooncake/build-deploy/` | 5 | 并行编译、CI/CD、Wheel |
-| **Operations & SRE** | `mooncake/operations/` | 6 | 可观测性、故障恢复、基准测试 |
+| 组件 | 目录 | 子组件数 | 覆盖要点 |
+|------|------|:--------:|---------|
+| **Transfer Engine / TENT** | `mooncake/transfer-engine/` | 4 | transport (RDMA/TCP/NVLink), tent (切片调度/遥测), memory (注册/分配器), topology (GPU-NIC/NUMA) |
+| **Mooncake Store** | `mooncake/store/` | 4 | storage-backend (DRAM/SSD/三级存储), master (HA/租约/驱逐), client (读写/连接池/P2P), replication (副本/亲和性/拓扑) |
+| **Conductor** | `mooncake/conductor/` | 1 | 哈希索引、前缀匹配、事件管线、多租户 |
+| **Framework Integrations** | `mooncake/integrations/` | 1 | pybind11 零拷贝、vLLM/SGLang 连接器 |
+| **Build & Deploy** | `mooncake/build-deploy/` | 1 | CMake 并行编译、CI/CD、Wheel 打包 |
+| **Operations & SRE** | `mooncake/operations/` | 1 | 可观测性、故障恢复、基准测试 |
 
-> `KNOWLEDGE.md` 文件会随每次优化分析持续生长，累积新的优化目标。
+> 子组件各自维护 `SKILL.md`（优化维度 + 领域知识映射）和 `KNOWLEDGE.md`（累积优化目标）。
 
 ## 项目结构
 
@@ -113,10 +113,21 @@ MooncakeAgentSkills/
 │   └── SKILL.md                 #   优化模式目录 (35+ 模式)、6 步分析流程、
 │                               #   6 维评估框架、反模式警示
 ├── mooncake/                    # Mooncake 专项技能
-│   ├── SKILL.md                 #   组件路由器 (关键词 → 组件映射)
-│   ├── repo-map.md              #   完整源码树 → 组件映射 (24 个关键文件)
-│   ├── transfer-engine/         #   TE/TENT 优化
-│   ├── store/                   #   Store 优化
+│   ├── SKILL.md                 #   组件路由器 (两级路由)
+│   ├── repo-map.md              #   源码树 → 子组件映射 (含子组件标注)
+│   ├── transfer-engine/         #   Transfer Engine / TENT
+│   │   ├── SKILL.md             #     子组件路由器
+│   │   ├── transport/           #     传输协议 (RDMA/TCP/NVLink/EFA/CXL)
+│   │   ├── tent/                #     TENT 运行时 (切片/选择/遥测)
+│   │   ├── memory/              #     内存管理 (注册/分配/零拷贝)
+│   │   └── topology/            #     拓扑发现 (GPU-NIC/NUMA)
+│   ├── store/                   #   Mooncake Store
+│   │   ├── SKILL.md             #     子组件路由器
+│   │   ├── storage-backend/     #     存储后端 (DRAM/SSD/G1-G2-G3)
+│   │   ├── master/              #     元数据主控 (HA/租约/驱逐)
+│   │   ├── client/              #     客户端数据路径 (读写/连接/P2P)
+│   │   └── replication/         #     副本放置 (亲和性/拓扑感知)
+│   ├── conductor/               #   Conductor KV Indexer
 │   ├── conductor/               #   Conductor 优化
 │   ├── integrations/            #   框架集成优化
 │   ├── build-deploy/            #   构建部署优化

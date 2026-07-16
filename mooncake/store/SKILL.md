@@ -1,99 +1,62 @@
-# Mooncake Store Optimization
+# Mooncake Store — 子组件路由
 
-Mooncake Store 是分布式 KV 缓存对象存储层，负责 KVCache 的存储、检索和生命周期管理。采用 Master/Client 架构，支持三级存储（G1 GPU HBM / G2 CPU DRAM / G3 NVMe SSD）。
+Mooncake Store 的入口路由器。Store 是分布式 KV 缓存对象存储层，采用 Master/Client 架构，支持三级存储。本文件根据优化问题的关键词分发到 4 个子组件。
 
-## 源代码地图
+## Store 架构速览
 
-参见 `mooncake/repo-map.md` § Mooncake Store。
+```
+┌──────────────────────────────────────────────────────┐
+│                   Mooncake Store                      │
+│                                                       │
+│  ┌─────────────┐  ┌──────────────┐  ┌──────────────┐ │
+│  │   master    │  │    client    │  │ replication  │ │
+│  │ 元数据主控   │  │ 客户端数据路径 │  │ 副本与放置    │ │
+│  │ HA·租约·驱逐 │  │ 读写·连接·P2P │  │ 亲和·拓扑·副本│ │
+│  └──────┬──────┘  └──────┬───────┘  └──────┬───────┘ │
+│         │                │                  │         │
+│         └────────────────┼──────────────────┘         │
+│                          │                            │
+│               ┌──────────┴──────────┐                 │
+│               │  storage-backend    │                 │
+│               │  存储后端            │                 │
+│               │  G1(HBM)/G2(DRAM)/  │                 │
+│               │  G3(SSD) 三级存储    │                 │
+│               └─────────────────────┘                 │
+└──────────────────────────────────────────────────────┘
+```
 
-### 分析入口点
+## 子组件路由表
 
-1. **Master 服务**: `src/mooncake_master/master_service.cpp` — 元数据协调核心
-2. **客户端实现**: `src/mooncake_client/real_client.cpp` — 读写路径
-3. **分段管理**: `src/mooncake_master/segment_manager.cpp` — 存储空间分配
-4. **驱逐策略**: `src/mooncake_master/eviction_manager.cpp` — 淘汰逻辑
-5. **租约管理**: `src/mooncake_master/lease_manager.cpp` — TTL 管理
-6. **三级存储**: `src/tiered_storage.cpp` — 数据在 G1/G2/G3 间迁移
+| 子组件 | 目录 | 职责 | 匹配关键词 |
+|--------|------|------|-----------|
+| **storage-backend** | `storage-backend/` | DRAM/SSD 管理、三级存储 (G1/G2/G3)、数据迁移、内存分配、碎片整理 | dram, ssd, nvme, hbm, vram, 显存, tiered storage, 分级存储, G1, G2, G3, migration, 迁移, allocator, 分配器, fragmentation, 碎片, compaction, backend, 后端, storage engine, 存储引擎, direct i/o, 裸盘, 磁盘 |
+| **master** | `master/` | 元数据主控、HA/故障转移、一致性、segment 管理、租约 (lease)、TTL、驱逐 (eviction)、metadata backend | master, 主控, metadata, 元数据, HA, 高可用, failover, 故障转移, 切换, consistency, 一致性, segment, 分段, lease, 租约, TTL, 过期, eviction, 驱逐, 淘汰, LRU, etcd, redis |
+| **client** | `client/` | 客户端读写路径、RealClient/DummyClient、连接池、批量操作、P2P Store | client, 客户端, real client, dummy client, put, get, read, write, 读写, connection, 连接, pool, 连接池, batch, 批量, P2P, peer-to-peer, 点对点, rpc, proxy, 代理 |
+| **replication** | `replication/` | 副本策略、亲和性/反亲和性放置、拓扑感知、跨节点/rack/DC、P2P 共享 | replica, 副本, replication, 复制, placement, 放置, affinity, 亲和性, 亲和, anti-affinity, 反亲和, topology, 拓扑, rack, 机架, cross-dc, 跨数据中心, quorum, 法定人数, p2p share, 共享 |
 
-## 优化维度
+## 路由逻辑
 
-### 1. 元数据服务 HA 与一致性
-- **代码入口**: `master_service.cpp`, `metadata_store.cpp`
-- **当前状态**: 支持 HTTP/ETCD/Redis 三种 metadata 后端，1024 分片
-- **关键问题**:
-  - Master 是单点还是支持多副本？故障转移时间？
-  - 元数据的一致性模型？（强一致 vs. 最终一致）
-  - 分段分配是否需要分布式锁？
-- **Domain Knowledge 映射**:
-  - `algorithms/distributed-consensus/KNOWLEDGE.md` — 共识协议、leader 选举
-  - `architecture/cloud-native/KNOWLEDGE.md` — 云原生服务架构
+1. **单关键词匹配**：在用户问题中搜索上表关键词，匹配最多的子组件
+2. **多子组件**：如果问题涉及存储端到端（如 "Store 的整体性能优化"），路由到所有 4 个子组件
+3. **跨组件**：如果问题涉及 Store 与 Transfer Engine 的交互（如 "put 操作的 RDMA 路径优化"），同时路由到 `store/client/` 和 `transfer-engine/transport/`
 
-### 2. 驱逐策略
-- **代码入口**: `eviction_manager.cpp`
-- **当前状态**: 基于 TTL（hard 5s, soft 30min）+ 容量驱逐
-- **关键问题**:
-  - 仅 TTL 是否足够？有没有基于访问频率的策略？
-  - 驱逐的粒度是整对象还是部分？
-  - 驱逐决策是中心化还是分布式？
-- **Domain Knowledge 映射**:
-  - `algorithms/resource-scheduling/KNOWLEDGE.md` — 缓存替换算法
-  - `architecture/memory-storage-hierarchy/KNOWLEDGE.md` — 层次化存储管理
+## 各子组件入口
 
-### 3. 三级存储迁移
-- **代码入口**: `tiered_storage.cpp`
-- **当前状态**: G1 (GPU HBM) → G2 (CPU DRAM) → G3 (NVMe SSD)
-- **关键问题**:
-  - 迁移触发条件？（容量阈值？访问频率？）
-  - 迁移是否阻塞读写？
-  - 降级（G1→G2）的延迟 vs. 升级（G3→G2）的策略
-- **Domain Knowledge 映射**:
-  - `performance/storage-filesystem/KNOWLEDGE.md` — 分级存储
-  - `architecture/memory-storage-hierarchy/KNOWLEDGE.md` — 存储层次
+| 子组件 | SKILL.md | 主要源码 (参见 repo-map.md) |
+|--------|----------|--------------------------|
+| storage-backend | `storage-backend/SKILL.md` | `storage_backend.cpp`, `tiered_storage.cpp` |
+| master | `master/SKILL.md` | `mooncake_master/` 全部 (6 个 cpp) |
+| client | `client/SKILL.md` | `mooncake_client/` + `p2p_store.cpp` |
+| replication | `replication/SKILL.md` | `replica_manager.cpp` + 放置逻辑 |
 
-### 4. 副本放置策略
-- **代码入口**: `replica_manager.cpp`
-- **当前状态**: 支持多副本
-- **关键问题**:
-  - 副本数如何选择？写入时全量同步还是异步？
-  - 副本放置是否感知拓扑？（同 rack? 跨 DC?）
-  - 读写 quorum 配置？
-- **Domain Knowledge 映射**:
-  - `architecture/cloud-native/KNOWLEDGE.md` — 副本策略
-  - `algorithms/distributed-consensus/KNOWLEDGE.md` — 复制协议
+## 分析流程
 
-### 5. 分段分配与碎片化
-- **代码入口**: `segment_manager.cpp`
-- **当前状态**: 分段 (segment) 是存储的基本单元
-- **关键问题**:
-  - 分段大小是否固定？如何选择最优值？
-  - 大量小对象是否导致碎片化？
-  - 分段回收和合并策略？
-- **Domain Knowledge 映射**:
-  - `performance/system-tuning/KNOWLEDGE.md` — 内存/存储分配
-  - `performance/storage-filesystem/KNOWLEDGE.md` — 空间管理
+1. 根据关键词路由到子组件
+2. 读取子组件 `SKILL.md` 获取优化维度和领域知识映射
+3. 参照 `../repo-map.md` 定位源代码
+4. 按 `../../common/SKILL.md` 中的流程执行分析
+5. 生成方案到 `../../proposals/`
 
-### 6. 批量操作优化
-- **代码入口**: `real_client.cpp:batch_put_from()` / `batch_get_into()`
-- **当前状态**: 支持批量 put/get
-- **关键问题**:
-  - 批量操作的内部调度？（全部并发？限流？）
-  - 批量失败时的行为？（全部回滚？部分成功？）
-  - 批量大小是否有上限？
-- **Domain Knowledge 映射**:
-  - `performance/gpu-ai-performance/KNOWLEDGE.md` — 批量推理
-  - `performance/optimization-paradigms/KNOWLEDGE.md` — 批处理模式
+## 已知优化目标
 
-### 7. 客户端连接池
-- **代码入口**: `real_client.cpp:setup()`
-- **当前状态**: 每个 client 建立一个连接
-- **关键问题**:
-  - 连接建立的开销？
-  - 是否支持连接复用和多路复用？
-  - Master 的连接数上限和负载？
-- **Domain Knowledge 映射**:
-  - `operations/cloud-infrastructure/KNOWLEDGE.md` — 连接管理
-  - `performance/concurrency/KNOWLEDGE.md` — 并发模型
-
-## 分析工作流
-
-同 Transfer Engine 的分析流程。详见 `common/SKILL.md`。
+各子组件的 KNOWLEDGE.md 中累积沉淀。

@@ -40,8 +40,16 @@ Mooncake 是一个 KVCache 中心化的 LLM 推理服务平台，采用三层架
 
 | 组件 | 路由目录 | 关键职责 | 匹配关键词 |
 |------|---------|---------|-----------|
-| **Transfer Engine / TENT** | `transfer-engine/` | 多协议数据平面、P2P 传输、内存注册 | transfer, transport, RDMA, TCP, NVLink, EFA, CXL, latency, bandwidth, 传输, 延迟, 带宽, batch, slice, topology, 拓扑, memory registration, 内存注册, GPUDirect, TENT, 多路径, multi-path, congestion, 拥塞 |
-| **Mooncake Store** | `store/` | 分布式 KV 存储、主从元数据、分级存储 | store, KV cache, put, get, eviction, 驱逐, replica, 副本, master, metadata, 元数据, tiered storage, G1, G2, G3, segment, 分段, lease, TTL, 过期, consistency, 一致性, HA, 高可用, failover, P2P store, allocation, 分配, fragmentation, 碎片 |
+| **Transfer Engine / TENT** | `transfer-engine/` → 4 子组件 | 多协议数据平面、P2P 传输、内存管理、拓扑发现 | transfer, transport, RDMA, TCP, NVLink, EFA, CXL, latency, bandwidth, 传输, 延迟, 带宽, batch, slice, topology, 拓扑, memory registration, 内存注册, GPUDirect, TENT, 多路径, multi-path, congestion, 拥塞 |
+| ┣ **transport** | `transfer-engine/transport/` | 各协议实现 (RDMA/TCP/NVLink/EFA/CXL) | rdma, tcp, nvlink, efa, cxl, 协议, congestion, 拥塞, DCQCN, multi-rail, GPUDirect, QP, roce, infiniband |
+| ┣ **tent** | `transfer-engine/tent/` | 切片调度、动态传输选择、遥测 | tent, 切片, slice, scheduler, transport selector, telemetry, 遥测, 自适应, 多路径, qos, 自愈 |
+| ┣ **memory** | `transfer-engine/memory/` | 内存注册、NVLink 分配器、零拷贝 | memory, 内存, register, pin, allocator, 分配器, zero-copy, 零拷贝, gpu memory, vram, numa |
+| ┗ **topology** | `transfer-engine/topology/` | GPU-NIC 拓扑发现、NUMA 感知 | topology, 拓扑, gpu-nic, pcie, numa, affinity, 亲和性, 绑定 |
+| **Mooncake Store** | `store/` → 4 子组件 | 分布式 KV 存储、主从元数据、分级存储、副本放置 | store, KV cache, put, get, eviction, 驱逐, replica, 副本, master, metadata, 元数据, tiered storage, G1, G2, G3, segment, 分段, lease, TTL, 过期, consistency, 一致性, HA, 高可用, failover, P2P store, allocation, 分配, fragmentation, 碎片, dram, ssd, nvme, affinity, 亲和 |
+| ┣ **storage-backend** | `store/storage-backend/` | DRAM/SSD 管理、三级存储 (G1/G2/G3) | dram, ssd, nvme, hbm, vram, tiered, 分级存储, migration, 迁移, allocator, fragmentation, 碎片, backend |
+| ┣ **master** | `store/master/` | 元数据主控、HA、租约、驱逐 | master, 主控, metadata, 元数据, HA, 高可用, failover, 故障转移, consistency, 一致性, segment, lease, 租约, TTL, eviction, 驱逐, etcd, redis |
+| ┣ **client** | `store/client/` | 客户端读写路径、连接池、批量操作、P2P | client, 客户端, put, get, read, write, connection, 连接池, batch, 批量, P2P, rpc, proxy |
+| ┗ **replication** | `store/replication/` | 副本策略、亲和/反亲和放置、拓扑感知 | replica, 副本, replication, 复制, placement, 放置, affinity, 亲和性, anti-affinity, 反亲和, topology, rack, cross-dc, quorum |
 | **Conductor** | `conductor/` | KV Cache 索引器、前缀感知路由 | conductor, routing, 路由, prefix cache, 前缀缓存, hash, 哈希, index, 索引, cache hit, 缓存命中, ModelContext, XXH3, event, 事件, register, query |
 | **Framework Integrations** | `integrations/` | Python 绑定、框架连接器 | vLLM, SGLang, TensorRT-LLM, LMDeploy, LMCache, connector, 连接器, integration, 集成, framework, 框架, python, pybind, binding, allocator, 分配器 |
 | **Build & Deploy** | `build-deploy/` | 编译构建、依赖管理、发布 | build, 构建, compile, 编译, CMake, dependency, 依赖, wheel, install, 安装, deploy, 部署, CI/CD, packaging, 打包, docker, container, 容器 |
@@ -49,10 +57,11 @@ Mooncake 是一个 KVCache 中心化的 LLM 推理服务平台，采用三层架
 
 ## 路由逻辑
 
-1. **精确匹配**：如果用户在优化问题中明确提到组件名（如 "Transfer Engine 的 RDMA 延迟"），直接路由
-2. **关键词匹配**：根据上表匹配最多关键词的组件
-3. **多组件匹配**：如果问题涉及多个组件（如 "Transfer Engine 和 Store 之间的交互优化"），路由到所有相关组件，合并分析结果
-4. **兜底路由**：如果问题无法明确归类（如 "如何优化 Mooncake 的整体性能"），路由到所有组件，生成综合方案
+1. **两级路由**：先匹配到组件（transfer-engine / store / conductor / integrations / build-deploy / operations），再进入组件的 `SKILL.md` 二次路由到子组件
+2. **精确匹配**：如果用户在优化问题中明确提到子组件名（如 "TENT 的切片调度"、"Master 的 HA"），直接路由到对应子组件
+3. **关键词匹配**：根据上表匹配最多关键词的组件→子组件
+4. **多组件匹配**：如果问题涉及多个组件（如 "Transfer Engine 和 Store 之间的交互优化"），路由到所有相关组件及其子组件，合并分析结果
+5. **兜底路由**：如果问题无法明确归类（如 "如何优化 Mooncake 的整体性能"），路由到所有组件，生成综合方案
 
 ## 分析流程
 
