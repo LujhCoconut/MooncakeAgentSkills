@@ -2,7 +2,7 @@
 
 > **最后更新**: 2026-07-16
 
-本文档从三个底层视角剖析 Mooncake，为所有组件的优化分析提供理论基础。在执行 `/advanced-optimize` 时，应首先理解 Mooncake 在这三个视角中的位置，再深入具体组件。
+本文档从三个底层视角剖析 Mooncake，为所有组件的优化分析提供理论基础。在执行 `/mooncake-agent-skills optimize` 时，应首先理解 Mooncake 在这三个视角中的位置，再深入具体组件。
 
 ---
 

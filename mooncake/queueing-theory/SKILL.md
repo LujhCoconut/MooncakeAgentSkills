@@ -5,12 +5,12 @@
 ## 调用方式
 
 ```
-/advanced-optimize "对 Mooncake 进行排队论分析"
+/mooncake-agent-skills optimize "对 Mooncake 进行排队论分析"
 ```
 
 或附带配置信息：
 ```
-/advanced-optimize "排队论分析: ConnectX-7 200Gbps, 8×H100, Samsung PM9A3 NVMe,
+/mooncake-agent-skills optimize "排队论分析: ConnectX-7 200Gbps, 8×H100, Samsung PM9A3 NVMe,
                    batch_size=64, avg_prompt=2000t, avg_decode=500t, QPS=50"
 ```
 

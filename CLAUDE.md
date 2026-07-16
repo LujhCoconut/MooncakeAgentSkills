@@ -21,10 +21,10 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 
 ## 核心工作流
 
-### 优化分析 (`/mooncake-agent-skills`)
+### 优化分析 (`optimize` 子命令)
 
 ```
-/mooncake-agent-skills "<优化问题描述>"
+/mooncake-agent-skills optimize "<优化问题描述>"
   → git pull (本 repo + Mooncake 源码)
   → 读取 architecture.md (三视角统一模型)
   → 路由到项目目录（mooncake/）
@@ -38,10 +38,10 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
   → git commit + push
 ```
 
-### 快速问答 (`/mooncake-qa`)
+### 快速问答 (`qa` 子命令)
 
 ```
-/mooncake-qa "<问题>"
+/mooncake-agent-skills qa "<问题>"
   → qa/SKILL.md: 关键词匹配
   → qa/KNOWLEDGE.md: 检索 Q&A 对
   → 简洁回答（一句话结论 + 必要细节）

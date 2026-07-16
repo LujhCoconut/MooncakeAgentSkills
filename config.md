@@ -54,7 +54,7 @@ cd <MooncakeAgentSkills 本地路径> && git add -A && git diff --cached --stat 
 
 ## 变更频率
 
-- 每次 `/advanced-optimize` 产生新的优化方案后自动 commit + push
+- 每次 `optimize` 子命令产生新的优化方案后自动 commit + push
 - 新增优化目标到 KNOWLEDGE.md 后也会触发提交
 
 ## 环境变量

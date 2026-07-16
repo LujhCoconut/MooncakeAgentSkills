@@ -1,11 +1,14 @@
 ---
-name: advanced-optimize
-description: 高级代码优化分析 skill。根据优化问题自动定位目标代码仓库的对应组件、检索领域知识库（domain_knowledge_agent）中的可复用论文洞察，评估可应用性并生成结构化优化方案。当前支持 Mooncake（KVCache 中心化 LLM 推理平台），覆盖传输引擎、分布式存储、缓存路由、框架集成、构建部署、运维监控等组件的优化分析。
+name: mooncake-agent-skills
+description: Mooncake 优化分析与快速问答。子命令 optimize（源码级优化分析+论文洞察+方案生成）和 qa（概念/配置/故障快速问答）。覆盖 Transfer Engine、Store、Conductor、框架集成、构建部署、运维监控。
 ---
 
-# Advanced Optimize
+# Mooncake Agent Skills
 
-基于领域知识的代码优化分析入口 skill。你的任务不是直接凭记忆给优化建议，而是先定位目标仓库的对应组件、阅读源代码、检索相关论文洞察，再评估可应用性并生成结构化方案。
+Mooncake 专项优化分析与问答入口。通过子命令分发到不同功能：
+
+- **`optimize`**（默认）— 源码级优化分析：定位组件 → 阅读源码 → 检索论文洞察 → 评估可应用性 → 生成结构化方案
+- **`qa`** — 快速问答：概念解释、配置查询、故障排查（检索 `qa/KNOWLEDGE.md`）
 
 ## ⚠️ 前置操作：同步远程仓库（必须最先执行）
 
@@ -19,16 +22,36 @@ cd <本 skill 所在目录> && git pull --rebase
 - 如果 pull 因网络问题失败 → 告知用户"⚠️ 无法同步远程仓库，继续使用本地版本"，不阻塞后续操作
 - 如果 pull 产生冲突 → 告知用户"⚠️ git pull 产生冲突，请手动解决"，继续处理用户请求不阻塞
 
-## 参数解析
+## 子命令解析
 
-用户输入格式：`/advanced-optimize "<优化问题描述>"`
+从用户输入中识别子命令和参数：
+
+| 用户输入模式 | 子命令 | 示例 |
+|-------------|--------|------|
+| 以 `optimize` 开头，或直接描述优化问题（无显式子命令） | `optimize` | `/mooncake-agent-skills optimize "降低 RDMA 传输延迟"` 或 `/mooncake-agent-skills "改进 KV cache 驱逐策略"` |
+| 以 `qa` 开头，或问概念/配置/报错类问题 | `qa` | `/mooncake-agent-skills qa "RDMA QP 报错怎么办"` 或 `/mooncake-agent-skills "Mooncake 的 PD 分离是什么意思"` |
+
+**子命令分发逻辑**：
+1. 如果 args 以 `optimize` 或 `qa` 开头 → 提取子命令，剩余部分为参数
+2. 如果无显式子命令 → 判断参数特征：
+   - 包含「优化」「改进」「降低」「提升」「分析代码」「瓶颈」等关键词 → 走 `optimize` 流程
+   - 包含「是什么」「怎么」「为什么」「报错」「配置」「默认值」「怎么调」等 → 走 `qa` 流程
+   - 歧义时默认走 `optimize`（宁可深度分析也不少答）
+
+---
+
+# optimize — 源码级优化分析
+
+基于领域知识的代码优化分析流程。你的任务不是直接凭记忆给优化建议，而是先定位目标仓库的对应组件、阅读源代码、检索相关论文洞察，再评估可应用性并生成结构化方案。
+
+## 参数说明
 
 从用户输入中提取优化问题。由于当前仅对接 Mooncake，无需指定目标项目。
 
 示例：
-- `/advanced-optimize "降低 RDMA 传输延迟"`
-- `/advanced-optimize "改进 KV cache 驱逐策略"`
-- `/advanced-optimize "提升 Master 的 HA"`
+- `/mooncake-agent-skills optimize "降低 RDMA 传输延迟"`
+- `/mooncake-agent-skills optimize "改进 KV cache 驱逐策略"`
+- `/mooncake-agent-skills optimize "提升 Master 的 HA"`
 
 ## 请求类型判断与路由规则
 
@@ -45,7 +68,7 @@ cd <本 skill 所在目录> && git pull --rebase
 
 ## 检索与优化流程
 
-> **注意区分请求类型**：如果用户问的是 Mooncake 的**概念、配置、FAQ 类问题**（如 "Mooncake 怎么安装"、"RDMA QP 报错怎么办"），应该使用 `/mooncake-qa` 快速回答，而不是走完整的优化分析流程。只有当用户明确要求**分析代码并生成优化方案**时才走以下流程。
+> **注意区分请求类型**：如果用户问的是 Mooncake 的**概念、配置、FAQ 类问题**（如 "Mooncake 怎么安装"、"RDMA QP 报错怎么办"），应该走 `qa` 子命令快速回答，而不是走完整的 optimize 流程。只有当用户明确要求**分析代码并生成优化方案**时才走以下流程。
 
 ### Phase 1: 路由到项目
 
@@ -86,6 +109,28 @@ cd <本 skill 所在目录> && git pull --rebase
 15. 按方案模板生成优化方案到 `proposals/<project>-<component>-<slug>-<date>.md`
 16. 更新 `history/optimization-log.md`
 17. 向用户呈现方案摘要
+
+---
+
+# qa — 快速问答
+
+Mooncake 常见问题快速回答入口。你的任务是根据用户问题中的关键词，在 `qa/KNOWLEDGE.md` 中定位相关 Q&A，给出准确、简洁的回答。如果 KNOWLEDGE.md 中没有覆盖，诚实告知并建议用户将问题补充到 Q&A 库。
+
+## 检索流程
+
+1. **关键词匹配**：从用户问题中提取关键词，匹配 `qa/KNOWLEDGE.md` 中的 `##` 二级标题（主题）和 `###` 三级标题（具体问题）
+2. **模糊匹配**：如果精确匹配失败，尝试同义词/相关词匹配（如 "RDMA" ↔ "传输"、"TTL" ↔ "租约"）
+3. **多主题**：如果问题涉及多个主题，合并回答
+4. **未覆盖**：如果 KNOWLEDGE.md 无匹配，回答"当前 Q&A 库未覆盖此问题"，建议用户在 `qa/KNOWLEDGE.md` 中追加
+
+## 回答格式
+
+- **简洁优先**：先给一句话结论，再展开细节
+- **引用源码**：如果涉及代码，给出文件路径和关键函数名
+- **区分版本**：如果信息可能因 Mooncake 版本而异，说明适用版本
+- **关联优化**：如果问题适合走 optimize 深度分析，在回答末尾提示可以用 `optimize` 子命令
+
+---
 
 ## 方案输出模板
 
@@ -162,7 +207,7 @@ cd <本 skill 所在目录> && git pull --rebase
 - `mooncake/build-deploy/SKILL.md` — 构建与部署优化
 - `mooncake/operations/SKILL.md` — 运维与 SRE 优化
 - `mooncake/queueing-theory/SKILL.md` — 排队论建模分析（13 个排队点 M/M/1 M/M/c M/G/1 端到端延迟估算）
-- `qa/SKILL.md` — Mooncake 快速问答（`/mooncake-qa`）
+- `qa/SKILL.md` — Mooncake 快速问答
 - `history/SKILL.md` — 优化会话记录说明
 
 ## 与新项目对接

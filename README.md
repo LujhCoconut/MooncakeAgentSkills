@@ -14,9 +14,9 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 
 | 能力 | 入口 | 说明 |
 |------|------|------|
-| **组件级优化分析** | `/mooncake-agent-skills "问题"` | 两级路由 → 源码分析 → 论文检索 → 方案生成 |
-| **排队论建模** | `/mooncake-agent-skills "排队论分析"` | 输入硬件配置 → 14 个排队点自动估算延迟 → 瓶颈排名 |
-| **快速问答** | `/mooncake-qa "问题"` | 概念 · 49 个配置参数 · 4 棵诊断树 · 11 个错误速查 |
+| **组件级优化分析** | `/mooncake-agent-skills optimize "问题"` | 两级路由 → 源码分析 → 论文检索 → 方案生成 |
+| **排队论建模** | `/mooncake-agent-skills optimize "排队论分析"` | 输入硬件配置 → 14 个排队点自动估算延迟 → 瓶颈排名 |
+| **快速问答** | `/mooncake-agent-skills qa "问题"` | 概念 · 49 个配置参数 · 4 棵诊断树 · 11 个错误速查 |
 | **三视角理论** | `mooncake/architecture.md` | 分布式存储 + 高性能通信 + LLM Serving 统一模型 |
 
 ---
@@ -39,19 +39,19 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ```bash
 # Transfer Engine
-/mooncake-agent-skills "降低 RDMA 传输延迟"
-/mooncake-agent-skills "TENT 多路径切片调度如何自适应链路质量"
-/mooncake-agent-skills "GPU-NIC 拓扑发现是否可用于调度优化"
+/mooncake-agent-skills optimize "降低 RDMA 传输延迟"
+/mooncake-agent-skills optimize "TENT 多路径切片调度如何自适应链路质量"
+/mooncake-agent-skills optimize "GPU-NIC 拓扑发现是否可用于调度优化"
 
 # Mooncake Store
-/mooncake-agent-skills "改进 KV cache 驱逐策略，引入访问频率感知"
-/mooncake-agent-skills "Master 元数据服务如何实现高可用"
-/mooncake-agent-skills "G1→G2→G3 三级存储的迁移策略优化"
+/mooncake-agent-skills optimize "改进 KV cache 驱逐策略，引入访问频率感知"
+/mooncake-agent-skills optimize "Master 元数据服务如何实现高可用"
+/mooncake-agent-skills optimize "G1→G2→G3 三级存储的迁移策略优化"
 
 # Conductor · Integrations · Build · Operations
-/mooncake-agent-skills "Conductor 前缀缓存索引结构优化"
-/mooncake-agent-skills "pybind11 Python 绑定零拷贝路径验证"
-/mooncake-agent-skills "端到端可观测性：metrics + tracing + logging"
+/mooncake-agent-skills optimize "Conductor 前缀缓存索引结构优化"
+/mooncake-agent-skills optimize "pybind11 Python 绑定零拷贝路径验证"
+/mooncake-agent-skills optimize "端到端可观测性：metrics + tracing + logging"
 ```
 
 ### 排队论建模与延迟估算
@@ -60,15 +60,15 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ```bash
 # 使用默认参数快速扫描
-/mooncake-agent-skills "对 Mooncake 进行排队论分析"
+/mooncake-agent-skills optimize "对 Mooncake 进行排队论分析"
 
 # 带入具体硬件
-/mooncake-agent-skills "排队论分析: ConnectX-7 400Gbps, 8×H100, Samsung PM9A3 NVMe×4,
+/mooncake-agent-skills optimize "排队论分析: ConnectX-7 400Gbps, 8×H100, Samsung PM9A3 NVMe×4,
                    QPS=100, avg_prompt=4000t, avg_decode=800t, model=Llama-70B"
 
 # 特定场景
-/mooncake-agent-skills "PD 分离场景下 Prefill→Decode KV cache 传输的排队延迟估算"
-/mooncake-agent-skills "G3 NVMe SSD 层的队列深度和延迟瓶颈分析"
+/mooncake-agent-skills optimize "PD 分离场景下 Prefill→Decode KV cache 传输的排队延迟估算"
+/mooncake-agent-skills optimize "G3 NVMe SSD 层的队列深度和延迟瓶颈分析"
 ```
 
 **排队论模块能力**：
@@ -82,12 +82,12 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 概念解释、配置查询、故障排查：
 
 ```bash
-/mooncake-qa "Mooncake 的 PD 分离是什么意思"
-/mooncake-qa "怎么确认 GPUDirect RDMA 有没有生效"
-/mooncake-qa "Master 挂了推理还能继续吗"
-/mooncake-qa "RDMA 报 cannot create QP 错怎么办"
-/mooncake-qa "Transfer Engine 的 MC_BATCH_SIZE 默认值是多少"
-/mooncake-qa "G2 满了会怎样？驱逐检查间隔怎么调"
+/mooncake-agent-skills qa "Mooncake 的 PD 分离是什么意思"
+/mooncake-agent-skills qa "怎么确认 GPUDirect RDMA 有没有生效"
+/mooncake-agent-skills qa "Master 挂了推理还能继续吗"
+/mooncake-agent-skills qa "RDMA 报 cannot create QP 错怎么办"
+/mooncake-agent-skills qa "Transfer Engine 的 MC_BATCH_SIZE 默认值是多少"
+/mooncake-agent-skills qa "G2 满了会怎样？驱逐检查间隔怎么调"
 ```
 
 **QA 覆盖**：概念与架构 (5)、配置参数大全 (49 项)、环境安装 (4)、Transfer Engine/RDMA (3)、Store (5)、故障排查 (4 棵诊断树 + 11 个错误速查)、性能调优 (4)。
@@ -115,7 +115,7 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ```
 MooncakeAgentSkills/
-├── SKILL.md                     # /mooncake-agent-skills 入口 (路由 + pre/post git sync)
+├── SKILL.md                     # /mooncake-agent-skills 入口 (子命令 optimize / qa + git sync)
 ├── CLAUDE.md                    # 项目指令 (行为准则、扩展规范)
 ├── config.md                    # 仓库路径、远程地址、环境变量
 ├── LICENSE
@@ -147,7 +147,7 @@ MooncakeAgentSkills/
 │   └── queueing-theory/         #   **排队论建模** (M/M/1 M/M/c M/G/1·14 排队点·硬件查表·瓶颈排名)
 │
 ├── qa/                          # Mooncake 快速问答
-│   ├── SKILL.md                 #   /mooncake-qa 入口
+│   ├── SKILL.md                 #   qa 子命令入口
 │   └── KNOWLEDGE.md             #   49 配置参数 + 4 诊断树 + 11 错误速查
 │
 ├── proposals/                   # 生成的优化方案

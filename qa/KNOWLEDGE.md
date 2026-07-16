@@ -402,7 +402,7 @@ Mooncake 中每个组件都有隐含的队列——RDMA send queue、Store reque
 
 如需系统性地用排队论建模分析端到端延迟，调用：
 ```bash
-/advanced-optimize "对 Mooncake 系统进行排队论建模分析"
+/mooncake-agent-skills optimize "对 Mooncake 系统进行排队论建模分析"
 ```
 
 这会触发 `mooncake/queueing-theory/SKILL.md` 中的方法论：识别所有排队点 → 选择模型 (M/M/1, M/M/c, M/G/1…) → 计算平均等待时间 → 定位瓶颈 → 给出优化建议。
