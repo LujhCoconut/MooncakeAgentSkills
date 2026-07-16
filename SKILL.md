@@ -47,6 +47,8 @@ cd <本 skill 所在目录> && git pull --rebase
 
 ## 检索与优化流程
 
+> **注意区分请求类型**：如果用户问的是 Mooncake 的**概念、配置、FAQ 类问题**（如 "Mooncake 怎么安装"、"RDMA QP 报错怎么办"），应该使用 `/mooncake-qa` 快速回答，而不是走完整的优化分析流程。只有当用户明确要求**分析代码并生成优化方案**时才走以下流程。
+
 ### Phase 1: 路由到项目
 
 1. 读取 `<project>/SKILL.md`（如 `mooncake/SKILL.md`）
@@ -161,6 +163,7 @@ cd <本 skill 所在目录> && git pull --rebase
 - `mooncake/integrations/SKILL.md` — 框架集成优化
 - `mooncake/build-deploy/SKILL.md` — 构建与部署优化
 - `mooncake/operations/SKILL.md` — 运维与 SRE 优化
+- `qa/SKILL.md` — Mooncake 快速问答（`/mooncake-qa`），30+ 常见问题
 - `history/SKILL.md` — 优化会话记录说明
 
 ## 与新项目对接

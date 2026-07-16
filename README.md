@@ -88,6 +88,19 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 /advanced-optimize Mooncake "RDMA 链路故障的快速检测和透明降级"
 ```
 
+### 快速问答
+
+不需要深度优化分析的简单问题，直接问：
+
+```bash
+/mooncake-qa "Mooncake 的 PD 分离是什么意思"
+/mooncake-qa "怎么确认 GPUDirect RDMA 有没有生效"
+/mooncake-qa "Master 挂了推理还能继续吗"
+/mooncake-qa "生产环境推荐的部署拓扑是什么"
+/mooncake-qa "RDMA 报 cannot create QP 错怎么办"
+/mooncake-qa "Store 的 TTL 驱逐怎么调优"
+```
+
 ## Mooncake 组件覆盖
 
 | 组件 | 目录 | 子组件数 | 覆盖要点 |
@@ -134,6 +147,9 @@ MooncakeAgentSkills/
 │   ├── build-deploy/            #   构建部署优化
 │   └── operations/              #   运维 SRE 优化
 ├── proposals/                   # 生成的优化方案 (.md)
+├── qa/                          # Mooncake 快速问答
+│   ├── SKILL.md                 #   /mooncake-qa 入口
+│   └── KNOWLEDGE.md             #   30+ 常见问题 (概念/配置/API/排错/调优)
 └── history/                     # 优化会话日志
 ```
 

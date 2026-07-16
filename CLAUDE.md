@@ -13,18 +13,22 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**，提供 `/advanced-optimize
 | 文件 | 类型 | 用途 |
 |------|------|------|
 | `SKILL.md` | 路由/指令型 | Skill 入口、路由规则、分析流程说明 |
-| `KNOWLEDGE.md` | 知识型 | 累积的优化目标知识，从实际分析中不断生长 |
+| `KNOWLEDGE.md` | 知识型 | 累积的优化目标知识 (mooncake) 或 Q&A 对 (qa) |
 | `CLAUDE.md` | 项目指令型 | 本文件，Claude Code 加载的项目级行为准则 |
 | `config.md` | 配置型 | 仓库路径、远程地址等配置 |
 | `repo-map.md` | 映射型 | 目标仓库的目录→组件映射表 |
+| `architecture.md` | 理论型 | Mooncake 三视角统一模型（分布式存储 + 通信 + Serving）|
 
 ## 核心工作流
 
+### 优化分析 (`/advanced-optimize`)
+
 ```
 /advanced-optimize <项目名> "<优化问题描述>"
-  → 解析参数：目标项目、优化问题
-  → 路由到项目目录（如 mooncake/）
-  → 按关键词匹配到组件子目录（如 transfer-engine/）
+  → git pull (本 repo + Mooncake 源码)
+  → 读取 architecture.md (三视角统一模型)
+  → 路由到项目目录（mooncake/）
+  → 按关键词匹配到组件子目录（两级路由）
   → 读取组件 SKILL.md，获取源代码地图与优化维度
   → 搜索目标仓库源代码
   → 调用 /domain-knowledge 检索相关论文洞察
@@ -33,6 +37,18 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**，提供 `/advanced-optimize
   → 更新 history/optimization-log.md
   → git commit + push
 ```
+
+### 快速问答 (`/mooncake-qa`)
+
+```
+/mooncake-qa "<问题>"
+  → qa/SKILL.md: 关键词匹配
+  → qa/KNOWLEDGE.md: 检索 Q&A 对
+  → 简洁回答（一句话结论 + 必要细节）
+  → 未覆盖时提示用户追加到 KNOWLEDGE.md
+```
+
+**使用场景**：概念解释、配置问题、故障排查、API 使用。对应 `qa/KNOWLEDGE.md` 中的 30+ 预置 Q&A。
 
 ## 与 domain_knowledge_agent 的交互
 
