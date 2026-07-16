@@ -77,6 +77,7 @@ Mooncake 是一个 KVCache 中心化的 LLM 推理服务平台，采用三层架
 | **Framework Integrations** | `integrations/` | Python 绑定、框架连接器 | vLLM, SGLang, TensorRT-LLM, LMDeploy, LMCache, connector, 连接器, integration, 集成, framework, 框架, python, pybind, binding, allocator, 分配器 |
 | **Build & Deploy** | `build-deploy/` | 编译构建、依赖管理、发布 | build, 构建, compile, 编译, CMake, dependency, 依赖, wheel, install, 安装, deploy, 部署, CI/CD, packaging, 打包, docker, container, 容器 |
 | **Cross-Cutting Operations** | `operations/` | 监控、日志、benchmark、SRE | monitor, 监控, log, 日志, alert, 告警, SRE, benchmark, 压测, 基准测试, profile, 性能分析, debug, 调试, error, 错误, recovery, 恢复, health check, 健康检查, observability, 可观测性, tracing, metrics, 指标 |
+| **Queueing Theory** | `queueing-theory/` | 排队论建模分析、端到端延迟估算、瓶颈定位 | queueing, 排队论, 排队, M/M/1, M/M/c, 延迟建模, 队列深度, 瓶颈分析, bottleneck, latency model, utilization, 利用率, 等待时间, Pollaczek-Khinchine, Erlang, Little's Law, ρ |
 
 ## 路由逻辑
 

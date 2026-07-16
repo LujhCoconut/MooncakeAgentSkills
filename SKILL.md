@@ -161,7 +161,8 @@ cd <本 skill 所在目录> && git pull --rebase
 - `mooncake/integrations/SKILL.md` — 框架集成优化
 - `mooncake/build-deploy/SKILL.md` — 构建与部署优化
 - `mooncake/operations/SKILL.md` — 运维与 SRE 优化
-- `qa/SKILL.md` — Mooncake 快速问答（`/mooncake-qa`），30+ 常见问题
+- `mooncake/queueing-theory/SKILL.md` — 排队论建模分析（13 个排队点 M/M/1 M/M/c M/G/1 端到端延迟估算）
+- `qa/SKILL.md` — Mooncake 快速问答（`/mooncake-qa`）
 - `history/SKILL.md` — 优化会话记录说明
 
 ## 与新项目对接
