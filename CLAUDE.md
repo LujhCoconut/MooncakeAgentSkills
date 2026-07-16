@@ -2,7 +2,7 @@
 
 ## 项目定位
 
-MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`），提供六个子命令：`optimize`（源码级优化分析）、`plan-feature`（新功能设计方案）、`code-review`（GitHub PR 审查）、`review`（本地代码审查）、`qa`（快速问答）、`clear-proposals`（清理历史方案）。与 domain_knowledge_agent 联动实现论文洞察驱动的优化方案与设计方案生成。
+MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`），提供七个子命令：`optimize`（源码级优化分析）、`plan-feature`（新功能设计方案）、`code-review`（GitHub PR 审查）、`review`（本地代码审查）、`qa`（快速问答）、`update-qa`（文本整理入库 Q&A）、`clear-proposals`（清理历史方案）。与 domain_knowledge_agent 联动实现论文洞察驱动的优化方案与设计方案生成。
 
 当前首个对接目标是 **Mooncake**（kvcache-ai/Mooncake），一个面向 LLM 推理的 KVCache 中心化解耦服务平台。
 
@@ -67,7 +67,21 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
   → 未覆盖时提示用户追加到 KNOWLEDGE.md
 ```
 
-**使用场景**：概念解释、配置问题、故障排查、API 使用。对应 `qa/KNOWLEDGE.md` 中的 30+ 预置 Q&A。
+**使用场景**：概念解释、配置问题、故障排查、API 使用。对应 `qa/KNOWLEDGE.md` 中的 30+ 预置 Q&A。回答第一行必须是「由AI总结，仅供参考！」。
+
+### 文本整理入库 (`update-qa` 子命令)
+
+```
+/mooncake-agent-skills update-qa "<一大段文本>"
+  → Step 1: 提取候选 Q&A（问题 + 答案 + 目标主题 + 可验证声明清单，与已有条目查重）
+  → Step 2: 源码验证（完整函数 + 调用链 ±1 层 + 交叉文件，标注证据层级）
+  → Step 3: 对抗反驳 double check（confirmed / corrected / rejected，置信度 ≥ 80 才通过）
+  → Step 4: 展示预览表格（含 rejected 条目及反驳理由），用户确认
+  → Step 5: 写入 qa/KNOWLEDGE.md（附来源注记）
+  → git commit + push
+```
+
+**使用场景**：把学习笔记、issue 讨论、群聊记录等长文本沉淀为经过源码验证的 Q&A 条目。核心原则：**先验证，后入库**——未经验证的内容不允许写入。
 
 ### PR 审查 (`code-review` 子命令)
 
@@ -153,7 +167,8 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 - **引用来源**：每个建议都标注引用的论文和 KNOWLEDGE.md 路径
 - **区分事实与推断**：从代码和论文中读到的内容 vs. 基于经验的推断
 - **不重复已有方案**：生成方案前先检查 `proposals/optimize/` 和 `proposals/feature/` 目录，避免重复
-- **proposal 不回写 KNOWLEDGE.md**：optimize / plan-feature 的方案内容只写入 `proposals/` 和 `history/optimization-log.md`；组件 `KNOWLEDGE.md` 由人工维护，本 skill 对其只读不写（`qa/KNOWLEDGE.md` 的用户主动追加除外）
+- **proposal 不回写 KNOWLEDGE.md**：optimize / plan-feature 的方案内容只写入 `proposals/` 和 `history/optimization-log.md`；组件 `KNOWLEDGE.md` 由人工维护，本 skill 对其只读不写（`qa/KNOWLEDGE.md` 例外：用户主动追加，或 `update-qa` 经源码验证 + 用户确认后写入）
+- **qa 回答带免责声明**：`qa` 子命令的回答第一行必须是「由AI总结，仅供参考！」
 - **先预览再写入**：optimize 和 plan-feature 在生成完整方案前必须先展示预览表格，用户确认后才写入文件
 - **审查已有代码**：Phase 4.5 必须审查相关已有代码（完整函数 + 调用链），避免优化建议/设计方案忽略已实现功能
 - **遵循记忆中的反馈**：代码审查中的发现 ≠ merge blocker，评估时给出诚实的应用建议

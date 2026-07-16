@@ -18,7 +18,8 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 | **排队论建模** | `/mooncake-agent-skills optimize "排队论分析"` | 输入硬件配置 → 14 个排队点自动估算延迟 → 瓶颈排名 |
 | **GitHub PR 审查** | `/mooncake-agent-skills code-review [PR]` | 5 并行 agent + 置信度打分 + `gh` 回帖 |
 | **本地代码审查** | `/mooncake-agent-skills review [aspects]` | git diff 多维度分析 → 结构化报告 |
-| **快速问答** | `/mooncake-agent-skills qa "问题"` | 概念 · 49 个配置参数 · 4 棵诊断树 · 11 个错误速查 |
+| **快速问答** | `/mooncake-agent-skills qa "问题"` | 概念 · 49 个配置参数 · 4 棵诊断树 · 11 个错误速查（回答首行标注「由AI总结，仅供参考！」） |
+| **Q&A 入库** | `/mooncake-agent-skills update-qa "<文本>"` | 长文本 → 提取 Q&A → 源码验证（调用链 ±1 层 + 对抗反驳）→ 确认后入库 |
 
 ---
 
@@ -36,7 +37,7 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ## 使用示例
 
-> 输入 `/mooncake-agent-skills` 时，终端补全菜单显示参数提示 `[optimize|plan-feature|code-review|review|qa|clear-proposals] <参数>`（来自根 SKILL.md frontmatter 的 `argument-hint`）。子命令级提示（如 `clear-proposals [today|month|year]`、`review [all|comments|tests|errors|types|code|simplify]`）在提交后通过交互式问答（AskUserQuestion）递归呈现，格式与各子目录 SKILL.md 的 `argument-hint` 保持一致。
+> 输入 `/mooncake-agent-skills` 时，终端补全菜单显示参数提示 `[optimize|plan-feature|code-review|review|qa|update-qa|clear-proposals] <参数>`（来自根 SKILL.md frontmatter 的 `argument-hint`）。子命令级提示（如 `clear-proposals [today|month|year]`、`review [all|comments|tests|errors|types|code|simplify]`）在提交后通过交互式问答（AskUserQuestion）递归呈现，格式与各子目录 SKILL.md 的 `argument-hint` 保持一致。
 
 ### 组件级优化分析
 
@@ -93,7 +94,17 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 /mooncake-agent-skills qa "G2 满了会怎样？驱逐检查间隔怎么调"
 ```
 
-**QA 覆盖**：概念与架构 (5)、配置参数大全 (49 项)、环境安装 (4)、Transfer Engine/RDMA (3)、Store (5)、故障排查 (4 棵诊断树 + 11 个错误速查)、性能调优 (4)。
+**QA 覆盖**：概念与架构 (5)、配置参数大全 (49 项)、环境安装 (4)、Transfer Engine/RDMA (3)、Store (5)、故障排查 (4 棵诊断树 + 11 个错误速查)、性能调优 (4)。回答第一行固定为「由AI总结，仅供参考！」。
+
+### Q&A 入库
+
+把长文本（学习笔记、issue 讨论、群聊记录）沉淀为经过源码验证的 Q&A 条目：
+
+```bash
+/mooncake-agent-skills update-qa "<一大段文本>"
+```
+
+**流程**：提取候选 Q&A → 源码验证（完整函数 + 调用链 ±1 层 + 交叉文件）→ 对抗反驳 double check（置信度 ≥ 80 才通过）→ 预览表格用户确认 → 写入 `qa/KNOWLEDGE.md`（附来源注记）。核心原则：**先验证，后入库**。
 
 ### 清理历史方案
 
@@ -128,8 +139,6 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 > **⚠️ 平台依赖**：`code-review` 和 `review` 子命令的审查流程**完全依赖 Claude Code 的 Agent 多模型编排能力**（Haiku 资格检查 + Sonnet 并行审查 + 置信度打分）。移植到 ChatGPT Codex / Kimi Code / Z-Code 等其他 AI 编程工具时，需要对应平台的类似能力（多模型并行调用、独立的 confidence scoring agent），否则审查质量会显著下降。
 
-### 清理历史方案
-
 ---
 
 ## Mooncake 组件覆盖
@@ -145,7 +154,8 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 | **Queueing Theory** | `mooncake/queueing-theory/` | 1 | M/M/1 M/M/c M/G/1 模型、硬件查表、14 排队点延迟估算、瓶颈排名、4 场景分类器 |
 | **Code Review** | `code-review/` | 1 | GitHub PR 多 agent 并行审查 + 置信度打分（依赖 Claude Code） |
 | **Local Review** | `review/` | 1 | git diff 多维度分析 (comments/tests/errors/types/code/simplify)（依赖 Claude Code） |
-| **Quick Q&A** | `qa/` | 1 | 49 配置参数、4 棵诊断树、11 错误速查 |
+| **Quick Q&A** | `qa/` | 1 | 49 配置参数、4 棵诊断树、11 错误速查（回答带 AI 免责声明） |
+| **QA 入库** | `update-qa/` | 1 | 文本 → Q&A 提取、源码验证（调用链 ±1 层）、对抗反驳、确认后入库 |
 | **Housekeeping** | `clear-proposals/` | 1 | 按 today/month/year 清理历史方案 |
 
 > 子组件各自维护 `SKILL.md`（优化维度 + 领域知识映射）和 `KNOWLEDGE.md`（优化目标知识，人工维护，optimize/plan-feature 的方案内容不回写）。每个 SKILL.md 末尾有维护规则：任何实质性更新需同步检查 `README.md`。
@@ -156,7 +166,7 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ```
 MooncakeAgentSkills/
-├── SKILL.md                     # /mooncake-agent-skills 入口 (子命令 optimize/code-review/review/qa + git sync)
+├── SKILL.md                     # /mooncake-agent-skills 入口 (子命令 optimize/plan-feature/code-review/review/qa/update-qa/clear-proposals + git sync)
 ├── CLAUDE.md                    # 项目指令 (行为准则、扩展规范)
 ├── config.md                    # 仓库路径、远程地址、环境变量
 ├── LICENSE
@@ -197,8 +207,11 @@ MooncakeAgentSkills/
 │   └── SKILL.md                 #   按 today/month/year 清理 proposals
 │
 ├── qa/                          # Mooncake 快速问答
-│   ├── SKILL.md                 #   qa 子命令入口
+│   ├── SKILL.md                 #   qa 子命令入口（回答带 AI 免责声明）
 │   └── KNOWLEDGE.md             #   49 配置参数 + 4 诊断树 + 11 错误速查
+│
+├── update-qa/                   # 文本整理入库 Q&A
+│   └── SKILL.md                 #   提取 Q&A + 源码验证 + 对抗反驳 + 确认后写入 qa/KNOWLEDGE.md
 │
 ├── proposals/                   # 生成的优化方案
 └── history/                     # 优化会话日志
