@@ -2,7 +2,7 @@
 
 ## 项目定位
 
-MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`），提供五个子命令：`optimize`（源码级优化分析）、`code-review`（GitHub PR 审查）、`review`（本地代码审查）、`qa`（快速问答）、`clear-proposals`（清理历史方案）。与 domain_knowledge_agent 联动实现论文洞察驱动的优化方案生成。
+MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`），提供六个子命令：`optimize`（源码级优化分析）、`plan-feature`（新功能设计方案）、`code-review`（GitHub PR 审查）、`review`（本地代码审查）、`qa`（快速问答）、`clear-proposals`（清理历史方案）。与 domain_knowledge_agent 联动实现论文洞察驱动的优化方案与设计方案生成。
 
 当前首个对接目标是 **Mooncake**（kvcache-ai/Mooncake），一个面向 LLM 推理的 KVCache 中心化解耦服务平台。
 
@@ -32,8 +32,27 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
   → 读取组件 SKILL.md，获取源代码地图与优化维度
   → 搜索目标仓库源代码
   → 调用 /domain-knowledge 检索相关论文洞察
+  → Phase 4.5: 审查已有代码（完整函数 + 调用链 ±1 层，避免忽略已实现功能）
   → 评估可应用性
-  → 生成优化方案到 proposals/
+  → Phase 5: 展示预览表格，用户确认
+  → Phase 6: 生成优化方案到 proposals/optimize/
+  → 更新 history/optimization-log.md
+  → git commit + push
+```
+
+### 功能设计 (`plan-feature` 子命令)
+
+```
+/mooncake-agent-skills plan-feature "<功能需求描述>"
+  → git pull (本 repo + Mooncake 源码)
+  → 读取 architecture.md (三视角统一模型)
+  → 路由到项目目录（mooncake/）
+  → Phase 2: 基础设施复用分析（搜索已有接口/模式/类似实现）
+  → Phase 3: 设计模式检索（领域知识库）
+  → Phase 4: 方案设计（复用清单 + 新增代码 + 独立程度判断）
+  → Phase 4.5: 已有代码审查（避免设计已有功能）
+  → Phase 5: 展示预览表格，用户确认
+  → Phase 6: 生成设计方案到 proposals/feature/
   → 更新 history/optimization-log.md
   → git commit + push
 ```
@@ -58,6 +77,7 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
   → 收集 CLAUDE.md 上下文
   → 5 个并行 agent 独立审查 (CLAUDE.md 合规 ×2, bug 扫描, git blame 历史, 过往 PR 交叉引用)
   → 置信度打分 (0-100)
+  → Step 4.5: Critical 问题 double check (反驳式验证)
   → 过滤 ≥ 80 分
   → gh CLI 回帖
 ```
@@ -70,6 +90,8 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 /mooncake-agent-skills review [comments|tests|errors|types|code|simplify|all]
   → 确定 git diff 范围
   → 按维度启动专业化 agent (串行默认, parallel 并行)
+  → 每个 agent 必须: 读取完整函数 + 追踪调用链 ±1 层 + 交叉文件关联
+  → Step 4: Critical 问题 double check (反驳式验证)
   → 聚合结果: Critical / Important / Suggestions / Strengths
   → 仅报告置信度 ≥ 80 的问题
 ```
@@ -80,12 +102,12 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 
 ```
 /mooncake-agent-skills clear-proposals today|month|year
-  → git log 查找时间范围内的 proposal 文件
+  → git log 查找时间范围内的 proposal 文件（proposals/optimize/ + proposals/feature/）
   → 展示摘要表格
   → 用户确认后 git rm + commit + push
 ```
 
-**使用场景**：定期清理过期的优化方案，避免 proposals/ 目录膨胀。
+**使用场景**：定期清理过期的优化方案和设计方案，避免 proposals/ 目录膨胀。
 
 ## 与 domain_knowledge_agent 的交互
 
@@ -126,11 +148,13 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 
 ## 行为准则
 
-- **只提方案，不改代码**：本 skill 生成优化建议，不直接修改目标仓库
+- **只提方案，不改代码**：本 skill 生成优化/设计建议，不直接修改目标仓库
 - **中文为主，术语保留英文**：如 latency、throughput、KV cache
 - **引用来源**：每个建议都标注引用的论文和 KNOWLEDGE.md 路径
 - **区分事实与推断**：从代码和论文中读到的内容 vs. 基于经验的推断
-- **不重复已有方案**：生成方案前先检查 proposals/ 目录，避免重复
+- **不重复已有方案**：生成方案前先检查 `proposals/optimize/` 和 `proposals/feature/` 目录，避免重复
+- **先预览再写入**：optimize 和 plan-feature 在生成完整方案前必须先展示预览表格，用户确认后才写入文件
+- **审查已有代码**：Phase 4.5 必须审查相关已有代码（完整函数 + 调用链），避免优化建议/设计方案忽略已实现功能
 - **遵循记忆中的反馈**：代码审查中的发现 ≠ merge blocker，评估时给出诚实的应用建议
 
 ## 代码审查行为准则（`code-review` / `review` 子命令）
