@@ -35,7 +35,7 @@ argument-hint: "<PR-URL 或 PR 号>"
 
 ### Step 3: 多 Agent 并行审查
 
-启动 **5 个并行 Sonnet agent**，各从不同维度独立审查：
+启动 **5 个并行 Sonnet agent**，各从不同维度独立审查；**当 PR 声称性能优化时**（标题/描述/commit message 含性能收益声明），额外启动第 6 个 agent：
 
 | Agent | 视角 | 审查内容 |
 |-------|------|---------|
@@ -44,6 +44,7 @@ argument-hint: "<PR-URL 或 PR 号>"
 | #3 | 历史上下文 | 读取 git blame 和修改代码的历史，从历史演进角度发现潜在的上下文相关 bug |
 | #4 | 过往 PR 交叉引用 | 检查之前 touch 过这些文件的 PR，查看是否有仍然适用于当前 PR 的 review comments |
 | #5 | 代码注释一致性 | 读取修改文件中的代码注释，确保 PR 的变更与注释中的指引一致 |
+| #6 | 收益真实性（条件启用） | 按 `review/SKILL.md` 的 perf-claims-reviewer 执行：四条作弊轴（规范失配/负载过拟合/装置利用/环境泄漏）+ 审查要点清单 + 诚实局限（代码层无法证实的输出「需 harness 级验证」而非硬下结论） |
 
 #### 审查上下文要求
 

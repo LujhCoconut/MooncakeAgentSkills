@@ -1,6 +1,8 @@
 # Optimization Session History
 
-优化会话记录目录。每次执行 optimize 子命令生成方案后，在此记录。
+优化会话记录目录。包含两个日志：
+- `optimization-log.md` — 每次 optimize / plan-feature 生成方案后记录
+- `rejected-proposals.md` — **whiteboard**：被用户否决/放弃的方案及否决理由，供后续查重避免重提（详见该文件内的使用规则）
 
 ## 日志格式
 

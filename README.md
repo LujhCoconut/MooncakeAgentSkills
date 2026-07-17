@@ -17,9 +17,9 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 | **组件级优化分析** | `/mooncake-agent-skills optimize "问题"` | 两级路由 → 源码分析 → 论文检索 → 方案生成 |
 | **排队论建模** | `/mooncake-agent-skills optimize "排队论分析"` | 输入硬件配置 → 14 个排队点自动估算延迟 → 瓶颈排名 |
 | **GitHub PR 审查** | `/mooncake-agent-skills code-review [PR]` | 5 并行 agent + 置信度打分 + `gh` 回帖 |
-| **本地代码审查** | `/mooncake-agent-skills review [aspects]` | git diff 多维度分析 → 结构化报告 |
+| **本地代码审查** | `/mooncake-agent-skills review [aspects]` | git diff 多维度分析（含 perf-claims 收益真实性）→ 结构化报告 |
 | **快速问答** | `/mooncake-agent-skills qa "问题"` | 概念 · 49 个配置参数 · 4 棵诊断树 · 11 个错误速查（回答首行标注「由AI总结，仅供参考！」） |
-| **Q&A 入库** | `/mooncake-agent-skills update-qa "<文本>"` | 长文本 → 提取 Q&A → 源码验证（调用链 ±1 层 + 对抗反驳）→ 确认后入库 |
+| **Q&A 入库** | `/mooncake-agent-skills update-qa "<文本>"` | 长文本 → 提取 Q&A → 源码验证（调用链 ±1 层 + 对抗反驳）→ 确认后入库；`audit` 模式重验已有条目防腐 |
 
 ---
 
@@ -106,6 +106,12 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 **流程**：提取候选 Q&A → 源码验证（完整函数 + 调用链 ±1 层 + 交叉文件）→ 对抗反驳 double check（置信度 ≥ 80 才通过）→ 预览表格用户确认 → 写入 `qa/KNOWLEDGE.md`（附来源注记）。核心原则：**先验证，后入库**。
 
+```bash
+# audit 模式：重验已有条目 vs 当前源码，防止条目腐烂（entry rot）
+/mooncake-agent-skills update-qa audit          # 审计全库
+/mooncake-agent-skills update-qa audit 配置参数  # 只审计指定主题
+```
+
 ### 清理历史方案
 
 ```bash
@@ -132,6 +138,7 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 # 指定维度
 /mooncake-agent-skills review code errors
 /mooncake-agent-skills review simplify
+/mooncake-agent-skills review perf-claims   # 性能优化收益真实性（reward-hack 四轴检测）
 
 # 并行加速
 /mooncake-agent-skills review all parallel
@@ -153,9 +160,9 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 | **Operations & SRE** | `mooncake/operations/` | 1 | 可观测性、故障恢复、基准测试 |
 | **Queueing Theory** | `mooncake/queueing-theory/` | 1 | M/M/1 M/M/c M/G/1 模型、硬件查表、14 排队点延迟估算、瓶颈排名、4 场景分类器 |
 | **Code Review** | `code-review/` | 1 | GitHub PR 多 agent 并行审查 + 置信度打分（依赖 Claude Code） |
-| **Local Review** | `review/` | 1 | git diff 多维度分析 (comments/tests/errors/types/code/simplify)（依赖 Claude Code） |
+| **Local Review** | `review/` | 1 | git diff 多维度分析 (comments/tests/errors/types/code/simplify/perf-claims)（依赖 Claude Code） |
 | **Quick Q&A** | `qa/` | 1 | 49 配置参数、4 棵诊断树、11 错误速查（回答带 AI 免责声明） |
-| **QA 入库** | `update-qa/` | 1 | 文本 → Q&A 提取、源码验证（调用链 ±1 层）、对抗反驳、确认后入库 |
+| **QA 入库** | `update-qa/` | 1 | 文本 → Q&A 提取、源码验证（调用链 ±1 层）、对抗反驳、确认后入库；audit 防腐审计 |
 | **Housekeeping** | `clear-proposals/` | 1 | 按 today/month/year 清理历史方案 |
 
 > 子组件各自维护 `SKILL.md`（优化维度 + 领域知识映射）和 `KNOWLEDGE.md`（优化目标知识，人工维护，optimize/plan-feature 的方案内容不回写）。每个 SKILL.md 末尾有维护规则：任何实质性更新需同步检查 `README.md`。
@@ -201,7 +208,7 @@ MooncakeAgentSkills/
 │   └── SKILL.md                 #   5 agent 并行 + 置信度打分 + gh 回帖（依赖 Claude Code）
 │
 ├── review/                      # 本地代码审查
-│   └── SKILL.md                 #   git diff 多维度 (comments/tests/errors/types/code/simplify)（依赖 Claude Code）
+│   └── SKILL.md                 #   git diff 多维度 (comments/tests/errors/types/code/simplify/perf-claims)（依赖 Claude Code）
 │
 ├── clear-proposals/             # 历史方案清理
 │   └── SKILL.md                 #   按 today/month/year 清理 proposals
@@ -211,10 +218,10 @@ MooncakeAgentSkills/
 │   └── KNOWLEDGE.md             #   49 配置参数 + 4 诊断树 + 11 错误速查
 │
 ├── update-qa/                   # 文本整理入库 Q&A
-│   └── SKILL.md                 #   提取 Q&A + 源码验证 + 对抗反驳 + 确认后写入 qa/KNOWLEDGE.md
+│   └── SKILL.md                 #   提取 Q&A + 源码验证 + 对抗反驳 + 确认后写入 qa/KNOWLEDGE.md；audit 防腐审计
 │
 ├── proposals/                   # 生成的优化方案
-└── history/                     # 优化会话日志
+└── history/                     # 优化会话日志 + rejected-proposals.md（whiteboard：被否决方案，防重提）
 ```
 
 ---
@@ -265,6 +272,17 @@ domain_knowledge_agent                  MooncakeAgentSkills
 ### common/SKILL.md — 通用优化方法论
 
 35+ 优化模式 (数据通路/资源调度/存储缓存/并发并行/可靠性)，6 维评估，4 级可应用性评级。
+
+### 设计参考：Jitskit(arXiv'26)
+
+Agent 流水线的四处设计借鉴自 Jitskit（LLM agent JIT 系统合成）的实践教训：
+
+| 借鉴点 | 落地位置 | Jitskit 依据 |
+|--------|---------|-------------|
+| Whiteboard 防重提 | `history/rejected-proposals.md`，Phase 4 查重 + Phase 5 放弃记录 | critic whiteboard：记录已排除设计及证据 |
+| 条目防腐审计 | `update-qa audit` 模式 | Auditor：定期审读实现 vs 规范，失效点显式化 |
+| 收益真实性审查 | `review perf-claims` 维度 + `code-review` Agent #6 | Reward-Hack Gallery 四轴（规范失配/负载过拟合/装置利用/环境泄漏） |
+| Leading indicators + 反作弊验证 | 方案模板「预期收益」「验证方案」section | ablation：leading indicators 收敛差异 1.42-3.75×；不可重构熵/per-run 随机化/状态化验证 |
 
 ---
 

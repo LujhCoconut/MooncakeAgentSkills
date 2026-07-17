@@ -34,7 +34,7 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
   → 调用 /domain-knowledge 检索相关论文洞察
   → Phase 4.5: 审查已有代码（完整函数 + 调用链 ±1 层，避免忽略已实现功能）
   → 评估可应用性
-  → Phase 5: 展示预览表格，用户确认
+  → Phase 5: 展示预览表格，用户确认（放弃 → 记入 history/rejected-proposals.md whiteboard）
   → Phase 6: 生成优化方案到 proposals/optimize/
   → 更新 history/optimization-log.md
   → git commit + push
@@ -51,7 +51,7 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
   → Phase 3: 设计模式检索（领域知识库）
   → Phase 4: 方案设计（复用清单 + 新增代码 + 独立程度判断）
   → Phase 4.5: 已有代码审查（避免设计已有功能）
-  → Phase 5: 展示预览表格，用户确认
+  → Phase 5: 展示预览表格，用户确认（放弃 → 记入 history/rejected-proposals.md whiteboard）
   → Phase 6: 生成设计方案到 proposals/feature/
   → 更新 history/optimization-log.md
   → git commit + push
@@ -83,6 +83,8 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 
 **使用场景**：把学习笔记、issue 讨论、群聊记录等长文本沉淀为经过源码验证的 Q&A 条目。核心原则：**先验证，后入库**——未经验证的内容不允许写入。
 
+**audit 模式**：`/mooncake-agent-skills update-qa audit [<主题>]` — 重验已有条目 vs 当前源码（仍有效 / 需修正 / 已过期 / 无法验证），防止条目腐烂（entry rot），预览确认后应用修正。
+
 ### PR 审查 (`code-review` 子命令)
 
 ```
@@ -90,6 +92,7 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
   → 资格检查 (跳过 closed/draft/已审查 PR)
   → 收集 CLAUDE.md 上下文
   → 5 个并行 agent 独立审查 (CLAUDE.md 合规 ×2, bug 扫描, git blame 历史, 过往 PR 交叉引用)
+  → 性能优化 PR 条件启用第 6 个 agent: 收益真实性 (perf-claims 四轴: 规范失配/负载过拟合/装置利用/环境泄漏)
   → 置信度打分 (0-100)
   → Step 4.5: Critical 问题 double check (反驳式验证)
   → 过滤 ≥ 80 分
@@ -101,7 +104,7 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 ### 本地审查 (`review` 子命令)
 
 ```
-/mooncake-agent-skills review [comments|tests|errors|types|code|simplify|all]
+/mooncake-agent-skills review [comments|tests|errors|types|code|simplify|perf-claims|all]
   → 确定 git diff 范围
   → 按维度启动专业化 agent (串行默认, parallel 并行)
   → 每个 agent 必须: 读取完整函数 + 追踪调用链 ±1 层 + 交叉文件关联
@@ -166,12 +169,13 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 - **中文为主，术语保留英文**：如 latency、throughput、KV cache
 - **引用来源**：每个建议都标注引用的论文和 KNOWLEDGE.md 路径
 - **区分事实与推断**：从代码和论文中读到的内容 vs. 基于经验的推断
-- **不重复已有方案**：生成方案前先检查 `proposals/optimize/` 和 `proposals/feature/` 目录，避免重复
+- **不重复已有方案**：生成方案前先检查 `proposals/optimize/` 和 `proposals/feature/` 目录，**以及 `history/rejected-proposals.md`（whiteboard）**——被否决过的方案不得原样重提，除非针对否决理由有新证据；用户在预览阶段选「放弃」时必须把方案标题与否决理由记入 whiteboard
 - **proposal 不回写 KNOWLEDGE.md**：optimize / plan-feature 的方案内容只写入 `proposals/` 和 `history/optimization-log.md`；组件 `KNOWLEDGE.md` 由人工维护，本 skill 对其只读不写（`qa/KNOWLEDGE.md` 例外：用户主动追加，或 `update-qa` 经源码验证 + 用户确认后写入）
 - **qa 回答带免责声明**：`qa` 子命令的回答第一行必须是「由AI总结，仅供参考！」
 - **先预览再写入**：optimize 和 plan-feature 在生成完整方案前必须先展示预览表格，用户确认后才写入文件
 - **审查已有代码**：Phase 4.5 必须审查相关已有代码（完整函数 + 调用链），避免优化建议/设计方案忽略已实现功能
 - **遵循记忆中的反馈**：代码审查中的发现 ≠ merge blocker，评估时给出诚实的应用建议
+- **Spec evolution（规范演化）**：使用中暴露的隐式期望（用户纠偏、发现的流程 gap、反复出现的误报模式）必须提升为 SKILL.md 中的显式规则，而不是留在会话记忆里——规范不完整是常态，在使用压力下持续把隐式不变量显式化（Jitskit(arXiv'26)：spec evolution must be first-class）
 
 ## 代码审查行为准则（`code-review` / `review` 子命令）
 

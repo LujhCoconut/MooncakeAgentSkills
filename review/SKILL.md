@@ -1,7 +1,7 @@
 ---
 name: mooncake-agent-skills
 description: 本地代码审查 — 多维度并行 agent 分析 git diff，结构化输出审查报告
-argument-hint: "[all|comments|tests|errors|types|code|simplify]"
+argument-hint: "[all|comments|tests|errors|types|code|simplify|perf-claims]"
 ---
 
 # review — 本地代码审查
@@ -10,7 +10,7 @@ argument-hint: "[all|comments|tests|errors|types|code|simplify]"
 
 > 入口：`/mooncake-agent-skills review [aspects]`
 > 默认审查 `git diff` 的未暂存变更。也可指定审查维度。
-> **无参数时**：使用 `AskUserQuestion` 展示维度选项 `[all（默认）| comments | tests | errors | types | code | simplify]` 供用户选择。
+> **无参数时**：使用 `AskUserQuestion` 展示维度选项 `[all（默认）| comments | tests | errors | types | code | simplify | perf-claims]` 供用户选择。
 
 ## 审查维度
 
@@ -24,6 +24,7 @@ argument-hint: "[all|comments|tests|errors|types|code|simplify]"
 | `types` | 类型 | 分析类型封装性；审查 invariant 表达；评级类型设计质量 |
 | `code` | 通用 | CLAUDE.md 合规检查；Bug 检测；通用代码质量审查 |
 | `simplify` | 简化 | 简化复杂代码；改善可读性；应用项目标准；保持功能不变 |
+| `perf-claims` | 收益真实性 | 审查声称的性能优化收益是否真实：靠违反未写明不变量换性能？overfit 特定 benchmark/trace 规律？benchmark 装置不对等？详见下文 perf-claims-reviewer |
 | `all` | 全部 | 运行所有适用的维度（默认） |
 
 ### 审查上下文要求
@@ -50,6 +51,7 @@ git diff --stat               # 变更统计
 - **注释/文档新增**：`comments`
 - **错误处理变更**：`errors`
 - **类型/接口新增或修改**：`types`
+- **声称性能优化的变更**（commit message / 注释 / 用户描述中含性能收益声明，或变更明显以提速为目的）：`perf-claims`
 - **在通过审查后**：`simplify`
 
 ### Step 2: 启动审查 Agent
@@ -141,6 +143,31 @@ git diff --stat               # 变更统计
 
 输出按严重度分组：Critical (90-100) 和 Important (80-89)。
 
+### perf-claims-reviewer（收益真实性审查）
+
+审查性能优化类变更的**收益是否真实**——与其他维度回答"这个问题是真的吗"不同，本维度回答"这个收益是真的吗"。设计依据：Jitskit(arXiv'26) 的 Reward-Hack Gallery——优化压力下，最大的"性能提升"经常来自违反没人写下来的不变量，而非真实优化（其观察到的最极端案例：+37× 吞吐实为 bitmap 假存储，值从未真正落盘）。
+
+**四条作弊轴**（按 Jitskit 分类，Mooncake 语境举例）：
+
+| 轴 | 模式 | 典型手法 | Mooncake 语境示例 |
+|----|------|---------|------------------|
+| I. 规范失配 | 满足字面规范，违反未写明的不变量 | 原子提交只校验 key 的截断 hash；跨线程绕过所有权直写他人 buffer；same-size 原地更新不推进版本号骗过 seqlock 重试 | 绕过 lease 检查提速读路径；跳过 replica 确认降低写延迟；驱逐时不校验 in-flight 引用 |
+| II. 负载过拟合 | 利用测试数据的统计/结构规律，换了负载即错 | 用 key 密度代替 hash（`slot = key & (N-1)`）；值可由 key 推导则只存 seed 重算 | 只对 benchmark 的固定 value_size / 密集 key 空间 / 特定 Zipf 分布成立的优化 |
+| III. 装置利用 | 收益来自 benchmark 两侧不对等，而非系统改进 | SUT 与 baseline 的 value clip 不同（+85% 假头条）；只在 THP warmup 窗口内采样 | 对照实验中 RDMA/TCP 配置、MC_BATCH_SIZE、预热状态不一致 |
+| IV. 环境泄漏 | 修改共享宿主状态且不复原 | 跑分脚本改 sysctl（如 hugepages）不恢复 | 测试脚本改内核参数/NUMA 绑核影响后续所有测试 |
+
+**审查要点清单**：
+
+1. **归因**：收益能否归因到具体设计改动？commit/注释声称的机制与代码实际做的事一致吗？
+2. **反事实**：如果删掉最可疑的捷径（如缓存了某个"恰好"可推导的值），收益还在吗？
+3. **泛化**：优化在 key 分布、value 大小、并发度、数据规模变化后**是否仍正确**（不只是仍快）？找出它隐式依赖的负载属性——若该属性是真实部署属性，应要求在注释/文档中显式声明，而非默默依赖
+4. **装置对等**：如变更附带 benchmark 数据，检查对照两侧配置逐项相同、采样窗口避开 warmup
+5. **验证充分性**：声称的不变量保持（一致性、恢复语义）是否有测试实际行使？"trace 没触发"不等于"保证成立"
+
+**诚实局限（必须遵守）**：Jitskit 报告部分 hack 对代码级审查**不可见**（same-size torn read 被 10 轮代码审计漏掉，触发率 1/2.25 亿读，只能靠端到端正确性 gate 抓到）。因此本维度发现可疑但无法在代码层证实的问题时，**不硬给结论**——输出「需 harness 级验证」建议（如：值注入不可重构熵、per-run 随机 key 置换、重启恢复测试），并按实际置信度打分，不为了凑数拔高。
+
+**perf-claims 专属排除规则**：变更未声称性能收益、也无性能动机时，本维度直接跳过（输出「不适用」），不要把普通功能变更硬套四轴分析。
+
 ## 排除规则
 
 以下情况**不报告**：
@@ -161,6 +188,9 @@ git diff --stat               # 变更统计
 
 # 仅简化
 /mooncake-agent-skills review simplify
+
+# 审查性能优化 PR 的收益真实性
+/mooncake-agent-skills review perf-claims
 
 # 并行审查加速
 /mooncake-agent-skills review all parallel
