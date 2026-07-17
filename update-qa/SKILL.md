@@ -1,6 +1,6 @@
 ---
 name: mooncake-agent-skills
-description: 将用户提供的长文本整理为 Q&A 对，经源码级验证（完整函数 + 调用链 ±1 层 + 对抗反驳）确认正确后，追加到 qa/KNOWLEDGE.md；audit 模式定期重验已有条目防腐
+description: 将用户提供的长文本整理为 Q&A 对，经源码级验证（完整函数 + 调用链 ±1 层 + 对抗反驳）确认正确后，追加到 qa/KNOWLEDGE.md；audit 模式对照当前源码重验已有条目
 argument-hint: "[audit] \"<待整理的长文本>\""
 ---
 
@@ -111,7 +111,7 @@ options:
 
 ---
 
-# audit 模式 — Q&A 库防腐审计
+# audit 模式 — 条目重验
 
 > 入口：`/mooncake-agent-skills update-qa audit [<主题>]`
 
