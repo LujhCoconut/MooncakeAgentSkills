@@ -1,7 +1,7 @@
 ---
 name: mooncake-agent-skills
 description: 本地代码审查 — 多维度并行 agent 分析 git diff，结构化输出审查报告
-argument-hint: "[all|comments|tests|errors|types|code|simplify|perf-claims]"
+argument-hint: "[all|comments|tests|errors|types|code|simplify|perf-claims|quick]"
 ---
 
 # review — 本地代码审查
@@ -10,7 +10,7 @@ argument-hint: "[all|comments|tests|errors|types|code|simplify|perf-claims]"
 
 > 入口：`/mooncake-agent-skills review [aspects]`
 > 默认审查 `git diff` 的未暂存变更。也可指定审查维度。
-> **无参数时**：使用 `AskUserQuestion` 展示维度选项 `[all（默认）| comments | tests | errors | types | code | simplify | perf-claims]` 供用户选择。
+> **无参数时**：使用 `AskUserQuestion` 展示维度选项 `[all（默认）| comments | tests | errors | types | code | simplify | perf-claims | quick]` 供用户选择。
 
 ## 审查维度
 
@@ -25,7 +25,8 @@ argument-hint: "[all|comments|tests|errors|types|code|simplify|perf-claims]"
 | `code` | 通用 | CLAUDE.md 合规检查；Bug 检测；通用代码质量审查 |
 | `simplify` | 简化 | 简化复杂代码；改善可读性；应用项目标准；保持功能不变 |
 | `perf-claims` | 收益真实性 | 审查声称的性能优化收益是否真实：靠违反未写明不变量换性能？overfit 特定 benchmark/trace 规律？benchmark 装置不对等？详见下文 perf-claims-reviewer |
-| `all` | 全部 | 运行所有适用的维度（默认） |
+| `quick` | 快速扫描 | **minimal 模式**：仅输出 Overall Risk + Top 5 Issues + Missing Tests + context savings，跳过 per-file 展开。适用小改动 / 快速门禁。等效 code-review-graph 的 `detail_level="minimal"` |
+| `all` | 全部 | 运行所有适用的维度（默认，不含 quick——quick 是独立输出截断模式，不是额外维度） |
 
 ### 审查上下文要求
 
@@ -68,17 +69,36 @@ git diff --stat               # 变更统计
 
 ### Step 3: 聚合结果
 
+**聚合前先计算 Overall Risk**：
+
+| 因素 | 权重 | 计算方式 |
+|------|------|---------|
+| 变更规模 | 基准 | `changed_files` 数量 + `changed_functions` 数量 |
+| 影响半径 | 高 | 每个 changed function 的 caller 数量之和（通过 grep/import 追踪估算）；`impacted_files ≥ 3` → +1 风险级 |
+| 测试差距 | 高 | `untested_changed_functions / total_changed_functions` 比例；`≥ 0.5` → +1 风险级 |
+| 继承/接口变更 | 特例 | 如涉及虚函数/接口签名/跨文件类型修改 → 直接至少 Medium |
+| 整体风险 | — | **Low**（≤2 文件且零 caller 影响）\| **Medium**（3-5 文件或 ≤5 callers）\| **High**（>5 文件或 >5 callers 或 untested >50%）|
+
+每个发现的问题额外标注：
+- **`dependents: N`** — 该函数/类型被 N 个外部调用者引用（通过 grep 调用方或 import 关系估算），N > 0 时显示
+
 ```markdown
 # Review Summary
 
+**Overall Risk: Low / Medium / High**（变更 N 文件 · M 函数 · K downstream callers · untested P%）
+
 ## Critical Issues (X found) — must fix
-- [dimension]: Issue description — file:line — confidence: XX
+- [dimension]: Issue description — file:line — confidence: XX — dependents: N
 
 ## Important Issues (X found) — should fix
-- [dimension]: Issue description — file:line — confidence: XX
+- [dimension]: Issue description — file:line — confidence: XX — dependents: N
 
 ## Suggestions (X found) — nice to have
 - [dimension]: Suggestion — file:line
+
+## Missing Tests (Y functions)
+- `function_name` in `file` — 建议补: <具体场景>
+- （无测试覆盖的 changed function 列表。每个标注建议补什么场景——空值/边界/并发/错误路径/兼容性。借鉴 code-review-graph(arXiv'25) 的 test gap 显式清单——"改了 N 个函数，M 个没测试"比笼统的"测试覆盖不足"可操作得多）
 
 ## Strengths
 - What's well-done in the changes
@@ -86,8 +106,11 @@ git diff --stat               # 变更统计
 ## Recommended Action
 1. Fix critical issues first
 2. Address important issues
-3. Consider suggestions
-4. Re-run review after fixes: /mooncake-agent-skills review
+3. Review missing test coverage
+4. Consider suggestions
+5. Re-run review after fixes: /mooncake-agent-skills review
+
+> **上下文消耗**: 本次审查读取 A 个文件 / B 行源码 / 约 C tokens（占全部受影响文件的 D%）。直接读取全部受影响文件预计消耗 E tokens——节省 F%。此统计帮助量化 skill 效率，借鉴 code-review-graph 的 context_savings 自汇报机制。
 ```
 
 ### Step 4: 严重问题 Double Check
@@ -168,6 +191,36 @@ git diff --stat               # 变更统计
 
 **perf-claims 专属排除规则**：变更未声称性能收益、也无性能动机时，本维度直接跳过（输出「不适用」），不要把普通功能变更硬套四轴分析。
 
+### quick-mode（快速扫描 / minimal 输出）
+
+与 `all` 不同，`quick` 不是一个新的审查维度，而是一个**输出截断模式**——仍跑 Step 1-2 的维度分析，但 Step 3 聚合时只输出 minimal 子集。借鉴 code-review-graph 的 `detail_level="minimal"`（~100 tokens 摘要 vs ~800+ tokens 完整报告），适用于小改动、快速门禁。
+
+**输出格式**：
+
+```markdown
+# Quick Review
+
+**Overall Risk: Low / Medium / High**（N files · M funcs · K callers · untested P%）
+
+## Top Issues (≤5)
+1. [dimension] Issue — file:line — conf: XX — dependents: N
+...
+
+## Missing Tests (if any)
+- `func` in `file` — 建议补: <场景>
+
+## Verdict
+✅ Safe to merge / ⚠️ Address N issues first / ❌ Blocked
+
+> **上下文**: 读取 A 文件 / B 行源码 / 约 C tokens（占全部受影响文件的 D%）。完整报告: `/mooncake-agent-skills review all`
+```
+
+**规则**：
+- Top Issues 取 Critical + Important 中置信度最高的 5 条
+- 所有 Critical（≥90）必须出现在 Top Issues 中，哪怕超过 5 条
+- Missing Tests 无内容时可省略
+- Verdict 依据：无 Critical + Overall Risk Low → Safe；有 Important 或 Risk Medium → ⚠️；有 Critical 或 Risk High → ❌
+
 ## 排除规则
 
 以下情况**不报告**：
@@ -191,6 +244,9 @@ git diff --stat               # 变更统计
 
 # 审查性能优化 PR 的收益真实性
 /mooncake-agent-skills review perf-claims
+
+# 快速门禁（minimal 输出，小改动适用）
+/mooncake-agent-skills review quick
 
 # 并行审查加速
 /mooncake-agent-skills review all parallel

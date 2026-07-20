@@ -2,6 +2,8 @@
 
 本文档维护 Mooncake 源代码树到各组件的映射关系。当 Mooncake 仓库结构变化时需同步更新。
 
+> **静态映射 vs 实时图**：本文件为人工维护的静态映射。如已在 Mooncake 源码仓库安装 [code-review-graph](https://github.com/tirth8205/code-review-graph)，可调用其 MCP 工具（`get_architecture_overview_tool`、`list_communities_tool`、`query_graph_tool`）获取实时的组件关系图、跨组件耦合度、blast radius 分析——作为本文件静态映射的补充。optimize Phase 1 路由时优先读本文件，发现文件路径不存在于预期位置时回落至 code-review-graph 的图查询。
+
 > **最后更新**: 2026-07-16
 > **变更**: 新增子组件映射 — transfer-engine 拆为 transport/tent/memory/topology，store 拆为 storage-backend/master/client/replication
 > **基于 Mooncake commit**: 当前 main 分支

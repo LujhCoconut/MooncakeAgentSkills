@@ -109,6 +109,8 @@ Found N issues:
 <link>
 
 🤖 Generated with [Claude Code](https://claude.ai/code)
+
+> **上下文消耗**: 本次审查读取 A 个文件 / B 行源码 / 约 C tokens（占全部受影响文件的 D%） | **Overall Risk: Low/Medium/High**
 ```
 
 如无问题：
@@ -119,6 +121,8 @@ Found N issues:
 No issues found. Checked for bugs and CLAUDE.md compliance.
 
 🤖 Generated with [Claude Code](https://claude.ai/code)
+
+> **上下文消耗**: 本次审查读取 A 个文件 / B 行源码 / 约 C tokens（占全部受影响文件的 D%） | **Overall Risk: Low**
 ```
 
 ## 误报排除指南

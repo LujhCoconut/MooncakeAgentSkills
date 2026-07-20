@@ -35,7 +35,7 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
   → Phase 4.5: 审查已有代码（完整函数 + 调用链 ±1 层，避免忽略已实现功能）
   → 评估可应用性
   → Phase 5: 展示预览表格，用户确认（放弃 → 记入 history/rejected-proposals.md whiteboard）
-  → Phase 6: 生成优化方案到 proposals/optimize/
+  → Phase 6: 生成优化方案到 proposals/optimize/（末尾附 context savings: 文件数/行数/tokens + 领域知识引用量）
   → 更新 history/optimization-log.md
   → git commit + push
 ```
@@ -52,7 +52,7 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
   → Phase 4: 方案设计（复用清单 + 新增代码 + 独立程度判断）
   → Phase 4.5: 已有代码审查（避免设计已有功能）
   → Phase 5: 展示预览表格，用户确认（放弃 → 记入 history/rejected-proposals.md whiteboard）
-  → Phase 6: 生成设计方案到 proposals/feature/
+  → Phase 6: 生成设计方案到 proposals/feature/（末尾附 context savings）
   → 更新 history/optimization-log.md
   → git commit + push
 ```
@@ -96,7 +96,7 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
   → 置信度打分 (0-100)
   → Step 4.5: Critical 问题 double check (反驳式验证)
   → 过滤 ≥ 80 分
-  → gh CLI 回帖
+  → gh CLI 回帖（末尾附 context savings: 文件数/行数/tokens 消耗 + Overall Risk）
 ```
 
 **使用场景**：GitHub PR 自动化审查。需要 `gh` CLI 已认证。
@@ -104,9 +104,10 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 ### 本地审查 (`review` 子命令)
 
 ```
-/mooncake-agent-skills review [comments|tests|errors|types|code|simplify|perf-claims|all]
+/mooncake-agent-skills review [comments|tests|errors|types|code|simplify|perf-claims|quick|all]
   → 确定 git diff 范围
-  → 按维度启动专业化 agent (串行默认, parallel 并行)
+  → 按维度启动专业化 agent (串行默认, parallel 并行)；quick 模式仅输出 Overall Risk + Top 5 + Missing Tests + context savings
+  → 聚合: Overall Risk (Low/Medium/High) + 每 issue dependents 计数 + Missing Tests 显式清单
   → 每个 agent 必须: 读取完整函数 + 追踪调用链 ±1 层 + 交叉文件关联
   → Step 4: Critical 问题 double check (反驳式验证)
   → 聚合结果: Critical / Important / Suggestions / Strengths
