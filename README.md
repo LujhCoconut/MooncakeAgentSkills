@@ -6,7 +6,7 @@
 [![Target](https://img.shields.io/badge/Target-Mooncake-orange)](https://github.com/kvcache-ai/Mooncake)
 [![License](https://img.shields.io/badge/License-LujhCoconut-green)](./LICENSE)
 
-MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`）。它与 [domain_knowledge_agent](https://github.com/LujhCoconut/domain_knowledge_agent) 联动，自动扫描 **[Mooncake](https://github.com/kvcache-ai/Mooncake)**（Moonshot AI 开源的 KVCache 中心化 LLM 推理服务平台，FAST 2025 Best Paper）的源代码，检索论文洞察，评估可应用性，生成结构化优化方案。同时内置 GitHub PR 审查和本地代码审查能力。
+MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`）。它与 [domain_knowledge_agent](https://github.com/LujhCoconut/domain_knowledge_agent) 联动，自动扫描 **[Mooncake](https://github.com/kvcache-ai/Mooncake)**（Moonshot AI 开源的 KVCache 中心化 LLM 推理服务平台，FAST 2025 Best Paper）的源代码，检索论文洞察，评估可应用性，生成结构化优化方案。同时内置 GitHub PR 审查、本地代码审查、API 参考指南、系统化故障诊断和本地 CI 验证能力。其中 `api-reference`、`troubleshoot`、`ci-local` 三个子命令适配自 [kvcache-ai/Mooncake 官方 skills](https://github.com/kvcache-ai/Mooncake/tree/main/.claude/skills)。
 
 ---
 
@@ -20,6 +20,9 @@ MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent
 | **本地代码审查** | `/mooncake-agent-skills review [aspects]` | git diff 多维度分析（含 perf-claims 收益真实性 + quick 快速门禁）→ Overall Risk + Missing Tests + context savings |
 | **快速问答** | `/mooncake-agent-skills qa "问题"` | 概念 · 49 个配置参数 · 4 棵诊断树 · 11 个错误速查（回答首行标注「由AI总结，仅供参考！」） |
 | **Q&A 入库** | `/mooncake-agent-skills update-qa "<文本>"` | 长文本 → 提取 Q&A → 源码验证（调用链 ±1 层 + 对抗反驳）→ 确认后入库；`audit` 模式条目重验 |
+| **API 参考指南** | `/mooncake-agent-skills api-reference [主题]` | Store / Transfer Engine / EP Backend 完整 API · 代码示例 · API→源码映射 · 最佳实践 · 性能提示 |
+| **故障排查** | `/mooncake-agent-skills troubleshoot [错误]` | 8 步系统化诊断 · 严重度分级 · 错误码→源码映射 · 关联 QA（适配自 Mooncake 官方 skill） |
+| **本地 CI** | `/mooncake-agent-skills ci-local [选项]` | 变更分析 → `run_ci_test.sh` → quick 模式 · 失败根因定位（适配自 Mooncake 官方 skill） |
 
 ---
 
@@ -37,7 +40,7 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ## 使用示例
 
-> 输入 `/mooncake-agent-skills` 时，终端补全菜单显示参数提示 `[optimize|plan-feature|code-review|review|qa|update-qa|clear-proposals] <参数>`（来自根 SKILL.md frontmatter 的 `argument-hint`）。子命令级提示（如 `clear-proposals [today|month|year]`、`review [all|comments|tests|errors|types|code|simplify]`）在提交后通过交互式问答（AskUserQuestion）递归呈现，格式与各子目录 SKILL.md 的 `argument-hint` 保持一致。
+> 输入 `/mooncake-agent-skills` 时，终端补全菜单显示参数提示 `[optimize|plan-feature|code-review|review|qa|update-qa|clear-proposals|api-reference|troubleshoot|ci-local] <参数>`（来自根 SKILL.md frontmatter 的 `argument-hint`）。子命令级提示（如 `clear-proposals [today|month|year]`、`review [all|comments|tests|errors|types|code|simplify]`、`api-reference [store|engine|ep|env|pattern]`）在提交后通过交互式问答（AskUserQuestion）递归呈现，格式与各子目录 SKILL.md 的 `argument-hint` 保持一致。
 
 ### 组件级优化分析
 
@@ -121,6 +124,50 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 /mooncake-agent-skills clear-proposals year      # 今年的方案
 ```
 
+### API 参考指南
+
+```bash
+# 查询 Mooncake Python API 用法
+/mooncake-agent-skills api-reference "Store put_tensor 怎么用"
+/mooncake-agent-skills api-reference "TransferEngine 的 initialize 参数"
+/mooncake-agent-skills api-reference "Mooncake EP dispatch combine 示例"
+
+# 按组件浏览
+/mooncake-agent-skills api-reference store    # Store API 全览
+/mooncake-agent-skills api-reference engine   # Transfer Engine API 全览
+/mooncake-agent-skills api-reference ep       # EP/Backend API 全览
+```
+
+**API 参考覆盖**：Mooncake Store (17 方法)、Transfer Engine (16 方法)、EP/Backend (4 方法)、环境变量 (17 个)、4 个常见模式、错误处理、API→C++ 源码映射。与 `qa` 互补：`api-reference` 讲「怎么用」，`qa` 讲「为什么/是什么」。
+
+### 系统化故障排查
+
+```bash
+# 系统化诊断（8 步检查 + 结构化报告）
+/mooncake-agent-skills troubleshoot
+/mooncake-agent-skills troubleshoot "RDMA QP 创建失败"
+
+# Quick 诊断模式（一键收集关键信息）
+/mooncake-agent-skills troubleshoot --quick
+```
+
+**排查覆盖**：服务状态 → Metadata Server 连通性 → 环境变量 → RDMA 设备 → 内存限制 → 网络连通性 → 日志分析（含错误码→源码映射）→ 配置验证。集成严重度分级（CRITICAL/HIGH/MEDIUM/LOW）+ 关联 QA 入口。
+
+### 提交前本地 CI
+
+```bash
+# 完整 CI（默认）
+/mooncake-agent-skills ci-local
+
+# Quick 快速门禁（跳过 ASan + ctest + wheel build）
+/mooncake-agent-skills ci-local --quick
+
+# 强制全量（忽略 paths-filter）
+/mooncake-agent-skills ci-local --skip-path-filter
+```
+
+**前置条件**：必须在 Mooncake 源码仓库根目录下执行。运行前自动展示变更分析（`git diff --stat`）。覆盖拼写检查、代码格式、CMake 编译、ctest、wheel build、集成测试。
+
 ### PR 代码审查
 
 ```bash
@@ -165,6 +212,9 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 | **Quick Q&A** | `qa/` | 1 | 49 配置参数、4 棵诊断树、11 错误速查（回答带 AI 免责声明） |
 | **QA 入库** | `update-qa/` | 1 | 文本 → Q&A 提取、源码验证（调用链 ±1 层）、对抗反驳、确认后入库；audit 条目重验 |
 | **Housekeeping** | `clear-proposals/` | 1 | 按 today/month/year 清理历史方案 |
+| **API Reference** 🆕 | `api-reference/` | 1 | 17 Store + 16 Transfer Engine + 4 EP 方法、4 Pattern、API→源码映射、最佳实践（适配自 Mooncake 官方） |
+| **Troubleshoot** 🆕 | `troubleshoot/` | 1 | 8 步诊断、严重度分级 (CRITICAL/HIGH/MEDIUM/LOW)、错误码→源码映射、关联 QA（适配自 Mooncake 官方） |
+| **Local CI** 🆕 | `ci-local/` | 1 | 变更分析、run_ci_test.sh、quick 模式、失败根因定位（适配自 Mooncake 官方） |
 
 > 子组件各自维护 `SKILL.md`（优化维度 + 领域知识映射）和 `KNOWLEDGE.md`（优化目标知识，人工维护，optimize/plan-feature 的方案内容不回写）。每个 SKILL.md 末尾有维护规则：任何实质性更新需同步检查 `README.md`。
 
@@ -174,7 +224,7 @@ git clone https://github.com/kvcache-ai/Mooncake.git ~/src/Mooncake
 
 ```
 MooncakeAgentSkills/
-├── SKILL.md                     # /mooncake-agent-skills 入口 (子命令 optimize/plan-feature/code-review/review/qa/update-qa/clear-proposals + git sync)
+├── SKILL.md                     # /mooncake-agent-skills 入口 (10 子命令: optimize/plan-feature/code-review/review/qa/update-qa/clear-proposals/api-reference/troubleshoot/ci-local + git sync)
 ├── CLAUDE.md                    # 项目指令 (行为准则、扩展规范)
 ├── config.md                    # 仓库路径、远程地址、环境变量
 ├── LICENSE
@@ -220,6 +270,17 @@ MooncakeAgentSkills/
 │
 ├── update-qa/                   # 文本整理入库 Q&A
 │   └── SKILL.md                 #   提取 Q&A + 源码验证 + 对抗反驳 + 确认后写入 qa/KNOWLEDGE.md；audit 条目重验
+│
+├── api-reference/ 🆕             # Mooncake Python API 参考指南（适配自 kvcache-ai/Mooncake）
+│   └── SKILL.md                 #   Store/Transfer Engine/EP Backend API + 代码示例 + 源码映射 + 性能提示 + 最佳实践
+│
+├── troubleshoot/ 🆕              # Mooncake 部署故障系统化诊断（适配自 kvcache-ai/Mooncake）
+│   └── SKILL.md                 #   8 步诊断 (服务/RDMA/环境/网络/内存/日志/配置) + 严重度 + 错误码→源码映射 + QA 关联
+│
+├── ci-local/ 🆕                  # Mooncake 提交前本地 CI 验证（适配自 kvcache-ai/Mooncake）
+│   ├── SKILL.md                 #   变更分析 + run_ci_test.sh + quick 模式 + 失败根因
+│   ├── scripts/                 #   check-prerequisites.sh
+│   └── examples/                #   minimal.md
 │
 ├── proposals/                   # 生成的优化方案
 └── history/                     # 优化会话日志 + rejected-proposals.md（whiteboard：被否决方案，防重提）

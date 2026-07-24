@@ -2,7 +2,7 @@
 
 ## 项目定位
 
-MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`），提供七个子命令：`optimize`（源码级优化分析）、`plan-feature`（新功能设计方案）、`code-review`（GitHub PR 审查）、`review`（本地代码审查）、`qa`（快速问答）、`update-qa`（文本整理入库 Q&A）、`clear-proposals`（清理历史方案）。与 domain_knowledge_agent 联动实现论文洞察驱动的优化方案与设计方案生成。
+MooncakeAgentSkills 是一个 **Claude Code Skill**（安装为 `/mooncake-agent-skills`），提供十个子命令：`optimize`（源码级优化分析）、`plan-feature`（新功能设计方案）、`code-review`（GitHub PR 审查）、`review`（本地代码审查）、`qa`（快速问答）、`update-qa`（文本整理入库 Q&A）、`clear-proposals`（清理历史方案）、`api-reference`（Python API 参考指南）、`troubleshoot`（系统化部署故障诊断）、`ci-local`（提交前本地 CI 验证）。其中 `api-reference`、`troubleshoot`、`ci-local` 适配自 kvcache-ai/Mooncake 官方 skills。与 domain_knowledge_agent 联动实现论文洞察驱动的优化方案与设计方案生成。
 
 当前首个对接目标是 **Mooncake**（kvcache-ai/Mooncake），一个面向 LLM 推理的 KVCache 中心化解耦服务平台。
 
